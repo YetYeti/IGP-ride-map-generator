@@ -583,7 +583,6 @@ def generate_map(data: List[Tuple[float, float]]) -> bool:
 ### 部署配置 (vercel.json)
 ```json
 {
-  "installCommand": "",
   "functions": {
     "app/api/**/*.ts": {
       "maxDuration": 60
