@@ -125,7 +125,7 @@ async function processTask(
 
     updateTask(taskId, { progress: 30 })
 
-    const outputDir = process.cwd() + '/public/output'
+    const outputDir = '/tmp/output'
     if (!existsSync(outputDir)) {
       mkdirSync(outputDir, { recursive: true })
     }
@@ -206,7 +206,7 @@ async function processTask(
           if (pythonResult.success) {
             result.combinedMaps.push({
               filename: combinedMapFilename,
-              url: `/output/${combinedMapFilename}`,
+              url: `/api/download/${taskId}/${combinedMapFilename}`,
             })
             console.log('Combined map generated successfully')
             addLog(taskId, `轨迹合成图已生成: ${combinedMapFilename} (${pythonResult.total_tracks} 个轨迹，${pythonResult.grid_size})`, 'success')
@@ -253,7 +253,7 @@ async function processTask(
             result.overlayMaps.push({
               filename: overlayFilename,
               style: overlayMapStyle,
-              url: `/output/${overlayFilename}`,
+              url: `/api/download/${taskId}/${overlayFilename}`,
             })
             console.log(`Overlay map generated for ${overlayMapStyle}: ${overlayFilename}`)
             addLog(taskId, `轨迹叠加网页已生成: ${overlayFilename} (${pythonResult.total_tracks} 个轨迹)`, 'success')

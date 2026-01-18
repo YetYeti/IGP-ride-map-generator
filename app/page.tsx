@@ -74,7 +74,10 @@ export default function Home() {
       
       console.log('Task status response:', task)
       
-      setLogs(task.logs || [])
+      // 只在日志数组有内容时才更新，避免闪烁
+      if (task.logs && task.logs.length > 0) {
+        setLogs(task.logs)
+      }
       
       if (task.status === 'completed') {
         console.log('=== Task completed ===')
