@@ -1,0 +1,15 @@
+{
+  "buildCommandSettings": {
+    "maxLambdaSize": "50mb"
+  },
+  "installCommand": "",
+  "functions": {
+    "app/api/**/*.ts": {
+      "maxDuration": 60
+    },
+    "api/**/*.py": {
+      "runtime": "python3.12",
+      "maxDuration": 60
+    }
+  }
+}

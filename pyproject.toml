@@ -1,0 +1,110 @@
+[project]
+name = "igpsport-ride-vercel"
+version = "1.0.0"
+description = "IGPSPORT骑行轨迹生成器 - Vercel版本"
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [
+    {name = "IGPSPORT Rider", email = "contact@example.com"}
+]
+license = {text = "MIT"}
+keywords = ["igpsport", "cycling", "fit", "map", "track", "folium"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
+    "Topic :: Utilities",
+]
+
+dependencies = [
+    "requests>=2.31.0",
+    "python-dotenv>=1.0.0",
+    "fitparse>=1.2.0",
+    "matplotlib>=3.8.0",
+    "folium>=0.14.0",
+    "Pillow>=10.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/igpsport-ride-vercel"
+Documentation = "https://github.com/yourusername/igpsport-ride-vercel#readme"
+Repository = "https://github.com/yourusername/igpsport-ride-vercel"
+Issues = "https://github.com/yourusername/igpsport-ride-vercel/issues"
+
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["api/python/*"]
+
+[tool.uv]
+index-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+
+# 代码格式化配置
+[tool.black]
+line-length = 100
+target-version = ["py312"]
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.venv
+  | node_modules
+  | __pycache__
+  | \.next
+  | build
+  | dist
+)/
+'''
+
+# 类型检查配置
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "fitparse.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "folium.*"
+ignore_missing_imports = true
+
+# Ruff代码检查配置
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+]
+ignore = []
+exclude = [
+    ".git",
+    ".venv",
+    "__pycache__",
+    "node_modules",
+    ".next",
+    "build",
+    "dist",
+]
