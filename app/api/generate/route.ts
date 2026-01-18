@@ -45,31 +45,15 @@ function updateTask(
 }
 
 
-function getPythonCommand(): string {
-  const venvPython = path.join(process.cwd(), '.venv', 'bin', 'python')
-  
-  if (process.env.VERCEL) {
-    // Vercel 环境：使用系统 python3
-    return 'python3'
-  }
-  
-  // 本地开发环境
-  if (existsSync(venvPython)) {
-    // 有 .venv：使用 .venv 中的 python（绝对路径）
-    return venvPython
-  }
-  
-  // 无 .venv：使用系统 python3
-  return process.platform === 'win32' ? 'python' : 'python3'
-}
 function executePythonCommand(
   command: string,
   args: string[],
   taskId: string
 ): Promise<{ stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
-    const pythonCmd = getPythonCommand()
-    const child = spawn(pythonCmd, args, {
+    // 统一使用 uv run 运行 Python 脚本（本地和 Vercel 一致）
+    const uvCmd = process.platform === 'win32' ? 'uv.exe' : 'uv'
+    const child = spawn(uvCmd, ['run', 'python', ...args], {
       cwd: process.cwd(),
     })
 
@@ -190,7 +174,7 @@ async function processTask(
     if (generateCombinedMap && processedActivities.length > 0) {
       addLog(taskId, '正在生成轨迹合成图...', 'info')
 
-      const pythonScriptPath = process.cwd() + '/api/python/generate_combined_map.py'
+      const pythonScriptPath = process.cwd() + '/lib/python/generate_combined_map.py'
       const combinedMapFilename = `combined_map_${taskId}.png`
       const combinedMapPath = `${outputDir}/${combinedMapFilename}`
 
@@ -241,7 +225,7 @@ async function processTask(
     if (generateOverlayMaps) {
       addLog(taskId, '正在生成轨迹叠加网页...', 'info')
 
-      const pythonScriptPath = process.cwd() + '/api/python/generate_multiple_overlays.py'
+      const pythonScriptPath = process.cwd() + '/lib/python/generate_multiple_overlays.py'
 
       const fitFilePaths = processedActivities.map(a => `${outputDir}/${a.RideId}.fit`)
 

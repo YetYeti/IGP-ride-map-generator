@@ -12,6 +12,10 @@
 /.next/
 /out/
 
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
 # production
 /build
 
@@ -22,6 +26,7 @@
 # debug
 npm-debug.log*
 yarn-debug.log*
+yarn-debug.log*
 yarn-error.log*
 
 # local env files
@@ -31,9 +36,34 @@ yarn-error.log*
 # vercel
 .vercel
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
+# Python virtual environment
+.venv/
+
+# Python 编译缓存
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.pip-cache/
+dist/
+*.egg-info/
+
+# Python 代码检查缓存
+.mypy_cache/
+.ruff_cache/
+__pycache__/
+
+# Python 字节码和优化文件
+*.pyc
+*.pyo
+*.pyo
+
+# Python 测试和 pip 缓存
+.pytest_cache/
+.pip-cache/
+
+# uv package manager
+uv.lock
 
 # output files
 /public/output/*

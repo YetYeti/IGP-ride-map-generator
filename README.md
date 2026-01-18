@@ -23,20 +23,16 @@
 
 ## 快速开始
 
-### 1. 安装依赖
+### 1. 安装前端依赖
 
 ```bash
 npm install
 ```
 
-### 2. 配置环境变量
+### 2. 安装 Python 依赖
 
-复制 `.env.example` 为 `.env.local` 并配置：
-
-```env
-# IGPSPORT 账号（可选，也可以在界面输入）
-IGP_USERNAME=your_igpsport_username
-IGP_PASSWORD=your_igpsport_password
+```bash
+uv sync
 ```
 
 ### 3. 本地开发
@@ -74,8 +70,10 @@ IGPSPORT_RIDE_MAP_VERCEL/
 │   └── OverlayMap.tsx             # 叠加地图
 ├── lib/
 │   ├── igpsport.ts                # IGPSPORT API 客户端
-│   ├── fit-parser.ts              # FIT 文件解析
-│   └── fit_processor.py           # Python FIT 处理器
+│   ├── map-styles.ts              # 地图样式配置
+│   └── python/                    # Python 脚本
+│       ├── generate_combined_map.py    # 生成轨迹合成图
+│       └── generate_multiple_overlays.py # 生成轨迹叠加网页
 ├── public/
 │   └── output/                    # 生成文件输出目录
 ├── package.json
