@@ -25,7 +25,7 @@ if (!global.tasks) {
 function addLog(taskId: string, message: string, level = 'info') {
   const task = global.tasks.get(taskId)
   if (task) {
-    const timestamp = new Date().toLocaleTimeString('zh-CN')
+    const timestamp = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
     task.logs.push({ timestamp, message, level })
     global.tasks.set(taskId, task)
   }
@@ -125,37 +125,48 @@ async function processTask(
 
     updateTask(taskId, { progress: 30 })
 
-    const outputDir = '/tmp/output'
+    const outputDir = process.env.VERCEL ? '/tmp/output' : process.cwd() + '/public/output'
     if (!existsSync(outputDir)) {
       mkdirSync(outputDir, { recursive: true })
     }
 
     const processedActivities: any[] = []
 
-    for (let i = 0; i < outdoorActivities.length; i++) {
-      const activity = outdoorActivities[i]
-      addLog(
-        taskId,
-        `正在处理活动 ${i + 1}/${outdoorActivities.length}: ${activity.RideId}`,
-        'info'
+    // 并发下载 FIT 文件（每批 5 个）
+    const BATCH_SIZE = 5
+    for (let batchStart = 0; batchStart < outdoorActivities.length; batchStart += BATCH_SIZE) {
+      const batch = outdoorActivities.slice(batchStart, batchStart + BATCH_SIZE)
+      const batchIndex = Math.floor(batchStart / BATCH_SIZE) + 1
+      const totalBatches = Math.ceil(outdoorActivities.length / BATCH_SIZE)
+
+      addLog(taskId, `正在处理第 ${batchIndex}/${totalBatches} 批次（${batch.length} 个活动）...`, 'info')
+
+      // 并发下载这一批
+      const batchResults = await Promise.all(
+        batch.map(async (activity) => {
+          try {
+            const fitFile = await client.downloadFitFile(activity.RideId)
+            const fitFilePath = `${outputDir}/${activity.RideId}.fit`
+
+            writeFileSync(fitFilePath, fitFile)
+            console.log('FIT file saved:', fitFilePath)
+
+            return { success: true, activity }
+          } catch (error: any) {
+            console.error('Error processing activity:', error)
+            addLog(taskId, `处理活动 ${activity.RideId} 失败: ${error.message}`, 'error')
+            return { success: false, activity, error: error.message }
+          }
+        })
       )
 
-      try {
-        const fitFile = await client.downloadFitFile(activity.RideId)
-        const fitFilePath = `${outputDir}/${activity.RideId}.fit`
-        
-        writeFileSync(fitFilePath, fitFile)
-        console.log('FIT file saved:', fitFilePath)
+      // 将成功的活动添加到结果中
+      const successfulInBatch = batchResults.filter(r => r.success).map(r => r.activity)
+      processedActivities.push(...successfulInBatch)
 
-        processedActivities.push(activity)
-
-        updateTask(taskId, {
-          progress: 30 + ((i + 1) / outdoorActivities.length) * 40,
-        })
-      } catch (error: any) {
-        console.error('Error processing activity:', error)
-        addLog(taskId, `处理活动 ${activity.RideId} 失败: ${error.message}`, 'error')
-      }
+      // 更新进度
+      const progress = 30 + (processedActivities.length / outdoorActivities.length) * 40
+      updateTask(taskId, { progress })
     }
 
     addLog(taskId, `成功处理 ${processedActivities.length} 个活动`, 'success')

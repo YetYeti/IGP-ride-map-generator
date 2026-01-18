@@ -13,8 +13,8 @@ export async function GET(
     return NextResponse.json({ error: 'Invalid filename' }, { status: 400 })
   }
 
-  // 从 /tmp/output 读取文件
-  const filePath = `/tmp/output/${filename}`
+  // 根据环境选择输出目录
+  const filePath = process.env.VERCEL ? `/tmp/output/${filename}` : `public/output/${filename}`
 
   if (!existsSync(filePath)) {
     return NextResponse.json(
@@ -35,11 +35,17 @@ export async function GET(
           ? 'image/png'
           : 'application/octet-stream'
 
+    // HTML 文件使用 inline 显示（用于 iframe 预览），其他文件强制下载
+    const contentDisposition =
+      ext === 'html'
+        ? 'inline'
+        : `attachment; filename="${filename}"`
+
     return new NextResponse(fileBuffer, {
       status: 200,
       headers: {
         'Content-Type': contentType,
-        'Content-Disposition': `attachment; filename="${filename}"`,
+        'Content-Disposition': contentDisposition,
         'Cache-Control': 'no-store', // 不要缓存，因为 /tmp 目录会清理
       },
     })
