@@ -147,7 +147,6 @@ async function processTask(
     }
 
     const processedActivities: any[] = []
-    const allGpsData: [number, number][][] = []
 
     for (let i = 0; i < outdoorActivities.length; i++) {
       const activity = outdoorActivities[i]
@@ -164,10 +163,6 @@ async function processTask(
         writeFileSync(fitFilePath, fitFile)
         console.log('FIT file saved:', fitFilePath)
 
-        const gpsData = generateMockGPSData()
-        allGpsData.push(
-          gpsData.map((p) => [p.lat, p.long])
-        )
         processedActivities.push(activity)
 
         updateTask(taskId, {
@@ -243,7 +238,7 @@ async function processTask(
       }
     }
 
-    if (generateOverlayMaps && allGpsData.length > 0) {
+    if (generateOverlayMaps) {
       addLog(taskId, '正在生成轨迹叠加网页...', 'info')
 
       const pythonScriptPath = process.cwd() + '/api/python/generate_multiple_overlays.py'
@@ -297,20 +292,6 @@ async function processTask(
     addLog(taskId, `处理失败: ${error.message}`, 'error')
     throw error
   }
-}
-
-function generateMockGPSData(): { lat: number; long: number }[] {
-  const gpsData: { lat: number; long: number }[] = []
-  const baseLat = 31.2304
-  const baseLong = 121.4737
-
-  for (let i = 0; i < 100; i++) {
-    const lat = baseLat + Math.sin(i * 0.1) * 0.01
-    const long = baseLong + Math.cos(i * 0.1) * 0.01
-    gpsData.push({ lat, long })
-  }
-
-  return gpsData
 }
 
 export async function POST(req: NextRequest) {

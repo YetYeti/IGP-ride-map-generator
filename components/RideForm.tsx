@@ -4,7 +4,7 @@ import React from 'react'
 import { Button } from './ui/Button'
 import { Input } from './ui/Input'
 import { TrackSettings } from './TrackSettings'
-import { MapStyle } from '../lib/fit-parser'
+import { MapStyle } from '../lib/map-styles'
 
 interface CombinedMapSettings {
   trackWidth: number

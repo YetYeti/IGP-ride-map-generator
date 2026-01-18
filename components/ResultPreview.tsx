@@ -3,7 +3,7 @@
 import React from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from './ui/Card'
 import { Button } from './ui/Button'
-import { MapStyle, MapStyleLabels } from '../lib/fit-parser'
+import { MapStyle, MapStyleLabels } from '../lib/map-styles'
 
 export interface Result {
   filename: string

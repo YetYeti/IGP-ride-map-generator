@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { RideForm } from '@/components/RideForm'
 import { LogDisplay, LogEntry } from '@/components/LogDisplay'
 import { ResultPreview, GenerationResult } from '@/components/ResultPreview'
-import { MapStyle } from '@/lib/fit-parser'
+import { MapStyle } from '@/lib/map-styles'
 
 interface CombinedMapSettings {
   trackWidth: number

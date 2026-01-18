@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { Button } from './ui/Button'
-import { MapStyle, MapStyleLabels } from '../lib/fit-parser'
+import { MapStyle, MapStyleLabels } from '../lib/map-styles'
 
 interface CombinedMapSettings {
   trackWidth: number
