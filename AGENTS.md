@@ -583,25 +583,17 @@ def generate_map(data: List[Tuple[float, float]]) -> bool:
 ### 部署配置 (vercel.json)
 ```json
 {
-  "buildCommandSettings": {
-    "maxLambdaSize": "50mb"
-  },
   "installCommand": "",
   "functions": {
     "app/api/**/*.ts": {
-      "maxDuration": 60
-    },
-    "api/**/*.py": {
-      "runtime": "python3.12",
       "maxDuration": 60
     }
   }
 }
 ```
 - **零配置**: Vercel 自动检测并使用 uv
-- **Python 运行时**: python3.12
 - **API 超时**: 60 秒
-- **Lambda 大小**: 50MB
+- **注意**: Python 脚本通过 Node.js spawn 调用 uv run，不作为独立 Vercel Functions
 
 ### 日志记录
 ```typescript
