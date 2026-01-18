@@ -70,6 +70,13 @@ export default function Home() {
     
     try {
       const response = await fetch(`/api/status/${id}`)
+      // 检查是否 404（任务不存在或已过期）
+      if (response.status === 404) {
+        console.log('=== Task not found or expired ===')
+        setLoading(false)
+        return
+      }
+
       const task = await response.json()
       
       console.log('Task status response:', task)
