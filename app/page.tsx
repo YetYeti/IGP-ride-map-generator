@@ -31,7 +31,6 @@ export default function Home() {
   const handleSubmit = async (data: RideFormData) => {
     try {
       console.log('=== Submitting form ===')
-      console.log('Username:', data.username)
       console.log('Overlay map style:', data.overlayMapStyle)
       console.log('Generate combined map:', data.generateCombinedMap)
       console.log('Generate overlay maps:', data.generateOverlayMaps)

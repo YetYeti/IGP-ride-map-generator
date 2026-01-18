@@ -306,7 +306,6 @@ export async function POST(req: NextRequest) {
       }
     } = body
 
-    console.log('Username:', username)
     console.log('Overlay map style:', overlayMapStyle)
     console.log('Generate combined map:', generateCombinedMap)
     console.log('Generate overlay maps:', generateOverlayMaps)
@@ -334,7 +333,6 @@ export async function POST(req: NextRequest) {
     console.log('Available tasks:', Array.from(global.tasks.keys()))
 
     addLog(taskId, '开始生成轨迹...', 'info')
-    addLog(taskId, `账号: ${username}`, 'info')
 
     processTask(
       taskId,
