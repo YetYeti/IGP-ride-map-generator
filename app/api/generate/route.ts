@@ -51,9 +51,9 @@ function executePythonCommand(
   taskId: string
 ): Promise<{ stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
-    // 统一使用 uv run 运行 Python 脚本（本地和 Vercel 一致）
-    const uvCmd = process.platform === 'win32' ? 'uv.exe' : 'uv'
-    const child = spawn(uvCmd, ['run', 'python', ...args], {
+    // 直接使用 python3（依赖已通过 uv sync 安装）
+    const pythonCmd = process.platform === 'win32' ? 'python' : 'python3'
+    const child = spawn(pythonCmd, args, {
       cwd: process.cwd(),
     })
 

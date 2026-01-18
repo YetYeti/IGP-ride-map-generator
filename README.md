@@ -105,12 +105,6 @@ IGPSPORT_RIDE_MAP_VERCEL/
 - **浅色地图**：CartoDB Positron，适合数据可视化
 - **深色地图**：CartoDB Dark Matter，现代深色主题
 
-## 注意事项
-
-- 由于 Vercel Edge Functions 有 10 秒超时限制，建议一次处理不超过 20 个骑行数据
-- 生成的文件存储在 `public/output/` 目录
-- 在 Vercel 上部署时，建议使用 Vercel Blob Storage 存储生成的文件
-
 ## 开源协议
 
 MIT License
