@@ -32,8 +32,6 @@ export class IGPSPORTClient {
 
   async login(username: string, password: string): Promise<void> {
     console.log('=== IGPSPORT Login ===')
-    console.log('Username:', username)
-    console.log('Password length:', password.length)
 
     const loginUrl = 'https://my.igpsport.com/Auth/Login'
 
@@ -56,15 +54,13 @@ export class IGPSPORTClient {
       })
 
       console.log('Login response status:', response.status)
-      console.log('Login response headers:', Object.fromEntries(response.headers.entries()))
 
       // 获取所有 Set-Cookie
-      const setCookieHeaders = response.headers.getSetCookie ? 
-        response.headers.getSetCookie() : 
+      const setCookieHeaders = response.headers.getSetCookie() ?
+        response.headers.getSetCookie() :
         [response.headers.get('Set-Cookie') || '']
 
       console.log('Set-Cookie headers count:', setCookieHeaders.length)
-      console.log('Set-Cookie headers:', setCookieHeaders.map(c => c.substring(0, 100)))
 
       if (setCookieHeaders.length === 0) {
         console.error('No Set-Cookie headers received')
@@ -77,12 +73,10 @@ export class IGPSPORTClient {
         const [name, value] = cookieParts.split('=')
         if (name && value) {
           this.cookieJar.set(name.trim(), value.trim())
-          console.log(`Cookie stored: ${name.trim()}=${value.substring(0, 50)}...`)
         }
       }
 
       console.log('Total cookies in jar:', this.cookieJar.size)
-      console.log('Cookies in jar:', Array.from(this.cookieJar.keys()))
 
     } catch (error: any) {
       console.error('Login error:', error)
@@ -96,7 +90,6 @@ export class IGPSPORTClient {
       .map(([name, value]) => `${name}=${value}`)
       .join('; ')
 
-    console.log('Request cookie string length:', cookieString.length)
     return cookieString
   }
 
@@ -116,9 +109,8 @@ export class IGPSPORTClient {
     
     if (loginToken) {
       headers['Authorization'] = `Bearer ${loginToken}`
-      console.log('Authorization header set with loginToken:', loginToken.substring(0, 30) + '...')
     }
-    
+
     return headers
   }
 
@@ -138,7 +130,6 @@ export class IGPSPORTClient {
     console.log('=== Fetching Activities ===')
     console.log('Page:', pageIndex, 'PageSize:', pageSize)
     console.log('URL:', url.toString())
-    console.log('Request headers:', this.getHeaders())
 
     try {
       const response = await fetch(url.toString(), {
@@ -147,7 +138,6 @@ export class IGPSPORTClient {
       })
 
       console.log('Activities response status:', response.status)
-      console.log('Activities response headers:', Object.fromEntries(response.headers.entries()))
 
       if (!response.ok) {
         console.error('Activities request failed, status:', response.status)
@@ -156,7 +146,6 @@ export class IGPSPORTClient {
 
       const text = await response.text()
       console.log('Activities response length:', text.length)
-      console.log('Activities response preview:', text.substring(0, 500))
 
       if (!text || text.trim().length === 0) {
         console.error('Empty response from activities API')
@@ -164,15 +153,9 @@ export class IGPSPORTClient {
       }
 
       const result = JSON.parse(text)
-      console.log('Parsed result keys:', Object.keys(result))
-      console.log('Result.item:', result.item)
 
       const activitiesData = result.item || []
       console.log('Activities data length:', activitiesData.length)
-
-      if (activitiesData.length > 0) {
-        console.log('Sample activity:', activitiesData[0])
-      }
 
       const activities: Activity[] = activitiesData.map(
         (data: any) =>
