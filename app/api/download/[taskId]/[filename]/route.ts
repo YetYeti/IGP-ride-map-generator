@@ -1,33 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { existsSync, readFileSync } from 'fs'
+import { existsSync, readFileSync, statSync, unlinkSync } from 'fs'
+import path from 'path'
+
+const FILE_TTL_MS = 30 * 60 * 1000 // 30 minutes
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ taskId: string; filename: string }> }
 ) {
-  const resolvedParams = await params
-  const { taskId, filename } = resolvedParams
-
-  // 安全检查：防止路径遍历攻击
-  if (filename.includes('..') || filename.includes('/')) {
-    return NextResponse.json({ error: 'Invalid filename' }, { status: 400 })
-  }
-
-  // 根据环境变量选择输出目录
-  const outputDir = process.env.OUTPUT_DIR || process.cwd() + '/public/output'
-  const filePath = `${outputDir}/${filename}`
-
-  if (!existsSync(filePath)) {
-    return NextResponse.json(
-      { error: 'File not found or expired' },
-      { status: 404 }
-    )
-  }
-
   try {
+    const resolvedParams = await params
+    const { taskId, filename } = resolvedParams
+
+    if (filename.includes('..') || filename.includes('/')) {
+      return NextResponse.json({ error: 'Invalid filename' }, { status: 400 })
+    }
+
+    const tempDir = process.env.TEMP_DIR || path.join(process.cwd(), 'public', 'temp')
+    const filePath = path.join(tempDir, filename)
+
+    if (!existsSync(filePath)) {
+      return NextResponse.json(
+        { error: 'File not found or expired' },
+        { status: 404 }
+      )
+    }
+
+    const stats = statSync(filePath)
+    const now = Date.now()
+    const age = now - stats.mtimeMs
+
+    if (age > FILE_TTL_MS) {
+      console.log(`Deleting expired file: ${filename} (age: ${Math.floor(age / 60000)} min)`)
+      unlinkSync(filePath)
+      return NextResponse.json(
+        { error: 'File expired (30 minutes)' },
+        { status: 404 }
+      )
+    }
+
     const fileBuffer = readFileSync(filePath)
 
-    // 根据文件扩展名设置 Content-Type
     const ext = filename.split('.').pop()?.toLowerCase()
     const contentType =
       ext === 'html'
@@ -36,7 +49,6 @@ export async function GET(
           ? 'image/png'
           : 'application/octet-stream'
 
-    // HTML 文件使用 inline 显示（用于 iframe 预览），其他文件强制下载
     const contentDisposition =
       ext === 'html'
         ? 'inline'
@@ -47,7 +59,7 @@ export async function GET(
       headers: {
         'Content-Type': contentType,
         'Content-Disposition': contentDisposition,
-        'Cache-Control': 'no-store', // 不要缓存，因为 /tmp 目录会清理
+        'Cache-Control': 'no-store',
       },
     })
   } catch (error: any) {

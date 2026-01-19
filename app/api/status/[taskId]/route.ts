@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+interface TaskFile {
+  filename: string
+  createdAt: number
+}
+
 interface Task {
   id: string
   status: 'processing' | 'completed' | 'failed'
@@ -7,6 +12,7 @@ interface Task {
   logs: { timestamp: string; message: string; level: string }[]
   result: any
   error: string | null
+  files?: TaskFile[]
 }
 
 declare global {

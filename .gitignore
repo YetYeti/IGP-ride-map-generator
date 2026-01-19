@@ -53,5 +53,5 @@ dist/
 uv.lock
 
 # output files (keep directory but ignore contents)
-/public/output/*
-!/public/output/.gitkeep
+/public/temp/*
+!/public/temp/.gitkeep

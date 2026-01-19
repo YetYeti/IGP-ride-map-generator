@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { v4 as uuidv4 } from 'uuid'
-import { writeFileSync, existsSync, mkdirSync } from 'fs'
+import { writeFileSync, existsSync, mkdirSync, unlinkSync, statSync, readdirSync } from 'fs'
 import { spawn } from 'child_process'
 import { IGPSPORTClient } from '@/lib/igpsport'
 import path from 'path'
+
+interface TaskFile {
+  filename: string
+  createdAt: number
+}
 
 interface Task {
   id: string
@@ -12,6 +17,7 @@ interface Task {
   logs: { timestamp: string; message: string; level: string }[]
   result: any
   error: string | null
+  files?: TaskFile[]
 }
 
 declare global {
@@ -95,6 +101,39 @@ interface CombinedMapSettings {
   columns: number
 }
 
+function cleanupExpiredFiles(tempDir: string, maxAgeMs: number = 30 * 60 * 1000) {
+  try {
+    if (!existsSync(tempDir)) return
+
+    const files = readdirSync(tempDir)
+    const now = Date.now()
+    let deletedCount = 0
+
+    for (const file of files) {
+      const filePath = path.join(tempDir, file)
+      try {
+        const stats = statSync(filePath)
+        if (stats.isDirectory()) continue
+
+        const age = now - stats.mtimeMs
+        if (age > maxAgeMs) {
+          unlinkSync(filePath)
+          deletedCount++
+          console.log(`Deleted expired file: ${file} (age: ${Math.floor(age / 60000)} min)`)
+        }
+      } catch (err) {
+        console.error(`Failed to check file ${file}:`, err)
+      }
+    }
+
+    if (deletedCount > 0) {
+      console.log(`Cleaned up ${deletedCount} expired files`)
+    }
+  } catch (error) {
+    console.error('Error cleaning up expired files:', error)
+  }
+}
+
 async function processTask(
   taskId: string,
   username: string,
@@ -125,10 +164,12 @@ async function processTask(
 
     updateTask(taskId, { progress: 30 })
 
-    const outputDir = process.env.OUTPUT_DIR || process.cwd() + '/public/output'
-    if (!existsSync(outputDir)) {
-      mkdirSync(outputDir, { recursive: true })
+    const tempDir = process.env.TEMP_DIR || process.cwd() + '/public/temp'
+    if (!existsSync(tempDir)) {
+      mkdirSync(tempDir, { recursive: true })
     }
+
+    cleanupExpiredFiles(tempDir)
 
     const processedActivities: any[] = []
 
@@ -144,7 +185,7 @@ async function processTask(
         batch.map(async (activity) => {
           try {
             const fitFile = await client.downloadFitFile(activity.RideId)
-            const fitFilePath = `${outputDir}/${activity.RideId}.fit`
+            const fitFilePath = `${tempDir}/${activity.RideId}.fit`
 
             writeFileSync(fitFilePath, fitFile)
             console.log('FIT file saved:', fitFilePath)
@@ -176,6 +217,7 @@ async function processTask(
       processedActivities: processedActivities.length,
       combinedMaps: [],
       overlayMaps: [],
+      files: [] as TaskFile[],
     }
 
     if (generateCombinedMap && processedActivities.length >0) {
@@ -183,9 +225,9 @@ async function processTask(
 
       const pythonScriptPath = path.join(process.cwd(), 'lib/python/generate_combined_map.py')
       const combinedMapFilename = `combined_map_${taskId}.png`
-      const combinedMapPath = `${outputDir}/${combinedMapFilename}`
+      const combinedMapPath = `${tempDir}/${combinedMapFilename}`
 
-      const fitFilePaths = processedActivities.map(a => `${outputDir}/${a.RideId}.fit`)
+      const fitFilePaths = processedActivities.map(a => `${tempDir}/${a.RideId}.fit`)
 
       console.log('Executing Python script:', pythonScriptPath)
       console.log('Number of FIT files:', fitFilePaths.length)
@@ -214,6 +256,10 @@ async function processTask(
               filename: combinedMapFilename,
               url: `/api/download/${taskId}/${combinedMapFilename}`,
             })
+            result.files.push({
+              filename: combinedMapFilename,
+              createdAt: Date.now(),
+            })
             console.log('Combined map generated successfully')
             addLog(taskId, `轨迹合成图已生成: ${combinedMapFilename} (${pythonResult.total_tracks} 个轨迹，${pythonResult.grid_size})`, 'success')
           } else {
@@ -233,10 +279,10 @@ async function processTask(
 
       const pythonScriptPath = path.join(process.cwd(), 'lib/python/generate_multiple_overlays.py')
 
-      const fitFilePaths = processedActivities.map(a => `${outputDir}/${a.RideId}.fit`)
+      const fitFilePaths = processedActivities.map(a => `${tempDir}/${a.RideId}.fit`)
 
       const overlayFilename = `overlay_${overlayMapStyle}_${taskId}.html`
-      const overlayPath = `${outputDir}/${overlayFilename}`
+      const overlayPath = `${tempDir}/${overlayFilename}`
 
       console.log('Generating overlay map for style:', overlayMapStyle)
       console.log('Number of FIT files:', fitFilePaths.length)
@@ -259,6 +305,10 @@ async function processTask(
               filename: overlayFilename,
               style: overlayMapStyle,
               url: `/api/download/${taskId}/${overlayFilename}`,
+            })
+            result.files.push({
+              filename: overlayFilename,
+              createdAt: Date.now(),
             })
             console.log(`Overlay map generated for ${overlayMapStyle}: ${overlayFilename}`)
             addLog(taskId, `轨迹叠加网页已生成: ${overlayFilename} (${pythonResult.total_tracks} 个轨迹)`, 'success')
@@ -294,7 +344,7 @@ export async function POST(req: NextRequest) {
       generateCombinedMap,
       generateOverlayMaps,
       combinedMapSettings = {
-        trackWidth: 4,
+        trackWidth:4,
         margin: 300,
         columns: 6,
       }
@@ -322,6 +372,7 @@ export async function POST(req: NextRequest) {
       logs: [],
       result: null,
       error: null,
+      files: [],
     })
 
     console.log('Task created:', taskId)

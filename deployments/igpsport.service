@@ -34,7 +34,7 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths=/var/lib/igpsport /var/log/igpsport
+ReadWritePaths=/opt/igpsport /var/log/igpsport
 
 [Install]
 WantedBy=multi-user.target

@@ -369,7 +369,7 @@ IGPSPORT_RIDE_MAP_VERCEL/
 ```bash
 NODE_ENV=production
 PORT=3000
-OUTPUT_DIR=/var/lib/igpsport/output
+TEMP_DIR=/var/lib/igpsport/temp
 FIT_DIR=/var/lib/igpsport/fit
 LOG_DIR=/var/log/igpsport
 ```
