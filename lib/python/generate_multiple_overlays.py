@@ -162,6 +162,8 @@ def main():
 
         # 提取所有GPS数据
         for i, fit_file in enumerate(args.fit_files, 1):
+            print_progress(f"处理 {i}/{len(args.fit_files)}")
+
             gps_data = extract_gps_data(fit_file)
 
             if not gps_data:
