@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { v4 as uuidv4 } from 'uuid'
-import { writeFileSync, existsSync, mkdirSync, readFileSync, unlinkSync } from 'fs'
+import { writeFileSync, existsSync, mkdirSync } from 'fs'
 import { spawn } from 'child_process'
 import { IGPSPORTClient } from '@/lib/igpsport'
-import { saveTask, updateTask, getTask } from '@/lib/file-task-manager'
 import path from 'path'
 
 interface Task {
@@ -15,25 +14,46 @@ interface Task {
   error: string | null
 }
 
+declare global {
+  var tasks: Map<string, Task>
+}
+
+if (!global.tasks) {
+  global.tasks = new Map()
+}
+
 function addLog(taskId: string, message: string, level = 'info') {
-  const task = getTask(taskId)
+  const task = global.tasks.get(taskId)
   if (task) {
     const timestamp = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
     task.logs.push({ timestamp, message, level })
-    saveTask(taskId, task)
+    global.tasks.set(taskId, task)
   }
 }
 
+function updateTask(
+  taskId: string,
+  updates: Partial<Task>
+): Task | undefined {
+  const task = global.tasks.get(taskId)
+  if (task) {
+    const updated = { ...task, ...updates }
+    global.tasks.set(taskId, updated)
+    return updated
+  }
+  return undefined
+}
 
 function executePythonCommand(
-  command: string,
+  scriptPath: string,
   args: string[],
   taskId: string
 ): Promise<{ stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
-    // 直接使用 python3（依赖已通过 uv sync 安装）
-    const pythonCmd = process.platform === 'win32' ? 'python' : 'python3'
-    const child = spawn(pythonCmd, args, {
+    const uvCmd = process.platform === 'win32' ? 'uv.exe' : 'uv'
+    const fullArgs = ['run', '--no-sync', 'python', scriptPath, ...args]
+    
+    const child = spawn(uvCmd, fullArgs, {
       cwd: process.cwd(),
     })
 
@@ -112,16 +132,14 @@ async function processTask(
 
     const processedActivities: any[] = []
 
-    // 并发下载 FIT 文件（每批 5 个）
-    const BATCH_SIZE = 5
+    const BATCH_SIZE =5
     for (let batchStart = 0; batchStart < outdoorActivities.length; batchStart += BATCH_SIZE) {
       const batch = outdoorActivities.slice(batchStart, batchStart + BATCH_SIZE)
-      const batchIndex = Math.floor(batchStart / BATCH_SIZE) + 1
+      const batchIndex = Math.floor(batchStart / BATCH_SIZE) +1
       const totalBatches = Math.ceil(outdoorActivities.length / BATCH_SIZE)
 
       addLog(taskId, `正在处理第 ${batchIndex}/${totalBatches} 批次（${batch.length} 个活动）...`, 'info')
 
-      // 并发下载这一批
       const batchResults = await Promise.all(
         batch.map(async (activity) => {
           try {
@@ -140,11 +158,9 @@ async function processTask(
         })
       )
 
-      // 将成功的活动添加到结果中
       const successfulInBatch = batchResults.filter(r => r.success).map(r => r.activity)
       processedActivities.push(...successfulInBatch)
 
-      // 更新进度
       const progress = 30 + (processedActivities.length / outdoorActivities.length) * 40
       updateTask(taskId, { progress })
     }
@@ -162,10 +178,10 @@ async function processTask(
       overlayMaps: [],
     }
 
-    if (generateCombinedMap && processedActivities.length > 0) {
+    if (generateCombinedMap && processedActivities.length >0) {
       addLog(taskId, '正在生成轨迹合成图...', 'info')
 
-      const pythonScriptPath = process.cwd() + '/lib/python/generate_combined_map.py'
+      const pythonScriptPath = path.join(process.cwd(), 'lib/python/generate_combined_map.py')
       const combinedMapFilename = `combined_map_${taskId}.png`
       const combinedMapPath = `${outputDir}/${combinedMapFilename}`
 
@@ -176,7 +192,6 @@ async function processTask(
 
       try {
         const args = [
-          pythonScriptPath,
           ...fitFilePaths,
           combinedMapPath,
           '--track-width',
@@ -187,7 +202,7 @@ async function processTask(
           combinedMapSettings.columns.toString(),
         ]
 
-        const { stdout } = await executePythonCommand('python3', args, taskId)
+        const { stdout } = await executePythonCommand(pythonScriptPath, args, taskId)
 
         console.log('Python stdout length:', stdout.length)
         console.log('Python stdout preview:', stdout.substring(0, 500))
@@ -216,7 +231,7 @@ async function processTask(
     if (generateOverlayMaps) {
       addLog(taskId, '正在生成轨迹叠加网页...', 'info')
 
-      const pythonScriptPath = process.cwd() + '/lib/python/generate_multiple_overlays.py'
+      const pythonScriptPath = path.join(process.cwd(), 'lib/python/generate_multiple_overlays.py')
 
       const fitFilePaths = processedActivities.map(a => `${outputDir}/${a.RideId}.fit`)
 
@@ -228,13 +243,12 @@ async function processTask(
 
       try {
         const args = [
-          pythonScriptPath,
           ...fitFilePaths,
           overlayPath,
           overlayMapStyle,
         ]
 
-        const { stdout } = await executePythonCommand('python3', args, taskId)
+        const { stdout } = await executePythonCommand(pythonScriptPath, args, taskId)
 
         console.log('Python stdout length:', stdout.length)
 
@@ -301,7 +315,7 @@ export async function POST(req: NextRequest) {
     const taskId = uuidv4()
     console.log('Created task ID:', taskId)
 
-    saveTask(taskId, {
+    global.tasks.set(taskId, {
       id: taskId,
       status: 'processing',
       progress: 0,

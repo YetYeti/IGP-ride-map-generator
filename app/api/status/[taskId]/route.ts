@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getTask } from '@/lib/file-task-manager'
 
 interface Task {
   id: string
@@ -10,6 +9,14 @@ interface Task {
   error: string | null
 }
 
+declare global {
+  var tasks: Map<string, Task>
+}
+
+if (!global.tasks) {
+  global.tasks = new Map()
+}
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ taskId: string }> }
@@ -17,7 +24,7 @@ export async function GET(
   try {
     const resolvedParams = await params
     const taskId = resolvedParams.taskId
-    const task = getTask(taskId)
+    const task = global.tasks.get(taskId)
 
     if (!task) {
       console.log('Task not found:', taskId)
