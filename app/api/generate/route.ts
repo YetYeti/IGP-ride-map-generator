@@ -348,9 +348,7 @@ async function processTask(
 
       updateTask(taskId, { progress: 95 })
 
-      addLog(taskId, '正在清理临时 FIT 文件...', 'info')
       cleanupFitFiles(tempDir, processedActivities)
-      addLog(taskId, `已清理 ${processedActivities.length} 个 FIT 文件`, 'success')
     }
 
     addLog(taskId, '生成完成！', 'success')
