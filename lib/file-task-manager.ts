@@ -10,7 +10,8 @@ interface Task {
   error: string | null
 }
 
-const TASKS_DIR = process.env.TASKS_DIR || '/var/lib/igpsport/tasks'
+const isProduction = process.env.NODE_ENV === 'production'
+const TASKS_DIR = process.env.TASKS_DIR || (isProduction ? '/var/lib/igpsport/tasks' : path.join(process.cwd(), 'public', 'tasks'))
 
 export function ensureTasksDir() {
   if (!existsSync(TASKS_DIR)) {
