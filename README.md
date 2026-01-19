@@ -113,12 +113,10 @@ sudo useradd -r -s /bin/false igpsport
 # 创建目录结构
 sudo mkdir -p /opt/igpsport
 sudo mkdir -p /var/lib/igpsport/temp
-sudo mkdir -p /var/log/nginx
 
 # 设置权限
-sudo chown -R igpsport:igpsport /opt/igpsport /var/lib/igpsport /var/log/nginx
+sudo chown -R igpsport:igpsport /opt/igpsport /var/lib/igpsport
 sudo chmod -R 755 /var/lib/igpsport
-sudo chmod -R 775 /var/log/nginx
 ```
 
 #### 2. 部署应用代码
