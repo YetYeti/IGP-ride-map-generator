@@ -11,6 +11,8 @@
 - 现代化响应式设计
 - 实时日志显示
 - 生成结果预览和下载
+- 临时文件30分钟自动过期
+- FIT 文件生成后立即清理
 
 ## 技术栈
 
@@ -111,12 +113,12 @@ sudo useradd -r -s /bin/false igpsport
 # 创建目录结构
 sudo mkdir -p /opt/igpsport
 sudo mkdir -p /var/lib/igpsport/temp
-sudo mkdir -p /var/log/igpsport
+sudo mkdir -p /var/log/nginx
 
 # 设置权限
-sudo chown -R igpsport:igpsport /opt/igpsport /var/lib/igpsport /var/log/igpsport
+sudo chown -R igpsport:igpsport /opt/igpsport /var/lib/igpsport /var/log/nginx
 sudo chmod -R 755 /var/lib/igpsport
-sudo chmod -R 775 /var/log/igpsport
+sudo chmod -R 775 /var/log/nginx
 ```
 
 #### 2. 部署应用代码
@@ -142,7 +144,25 @@ sudo -u igpsport npm ci --production
 sudo -u igpsport uv sync
 ```
 
-#### 4. 构建应用
+#### 4. 配置环境变量
+
+```bash
+# 复制环境变量模板
+sudo cp .env.example .env
+
+# 编辑环境变量
+sudo vi .env
+```
+
+编辑 `.env` 文件，配置必要的环境变量：
+
+```bash
+NODE_ENV=production
+PORT=3000
+TEMP_DIR=/var/lib/igpsport/temp
+```
+
+#### 5. 构建应用
 
 ```bash
 cd /opt/igpsport
@@ -151,7 +171,9 @@ cd /opt/igpsport
 sudo -u igpsport npm run build
 ```
 
-#### 5. 配置 systemd 服务
+构建成功后，会在 `.next/standalone` 目录生成独立运行文件。
+
+#### 6. 配置 systemd 服务
 
 ```bash
 # 复制 systemd 服务文件
@@ -255,19 +277,6 @@ sudo systemctl reload nginx      # 重载（不中断连接）
 sudo systemctl status nginx      # 状态
 ```
 
-#### 查看日志
-
-```bash
-# systemd 日志（实时）
-sudo journalctl -u igpsport -f
-
-# Nginx 访问日志
-sudo tail -f /var/log/nginx/igpsport_access.log
-
-# Nginx 错误日志
-sudo tail -f /var/log/nginx/igpsport_error.log
-```
-
 ### 监控和维护
 
 #### 健康检查
@@ -338,7 +347,8 @@ IGPSPORT_RIDE_MAP_VERCEL/
 │   ├── igpsport.service           # systemd 服务配置
 │   └── nginx.conf                # Nginx 配置
 ├── public/
-│   └── output/                    # 生成文件输出目录
+│   ├── temp/                      # 临时文件目录（30分钟过期）
+│   └── .gitkeep
 ├── package.json
 ├── tsconfig.json
 ├── tailwind.config.ts
@@ -371,6 +381,13 @@ NODE_ENV=production
 PORT=3000
 TEMP_DIR=/var/lib/igpsport/temp
 ```
+
+## 文件清理机制
+
+- **临时文件存储**：所有生成文件（PNG、HTML、FIT）存储在 `TEMP_DIR`
+- **30分钟过期**：PNG 和 HTML 文件30分钟后自动删除
+- **立即清理**：FIT 文件在生成完成后立即删除
+- **自动清理**：每次生成前自动清理过期文件
 
 ## 地图样式
 
