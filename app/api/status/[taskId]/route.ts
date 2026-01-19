@@ -9,7 +9,6 @@ interface Task {
   id: string
   status: 'processing' | 'completed' | 'failed'
   progress: number
-  logs: { timestamp: string; message: string; level: string }[]
   result: any
   error: string | null
   files?: TaskFile[]

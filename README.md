@@ -370,8 +370,7 @@ IGPSPORT_RIDE_MAP_VERCEL/
 NODE_ENV=production
 PORT=3000
 TEMP_DIR=/var/lib/igpsport/temp
-FIT_DIR=/var/lib/igpsport/fit
-LOG_DIR=/var/log/igpsport
+FIT_DIR=public/fit
 ```
 
 ## 地图样式

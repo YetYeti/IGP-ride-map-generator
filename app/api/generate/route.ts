@@ -14,7 +14,6 @@ interface Task {
   id: string
   status: 'processing' | 'completed' | 'failed'
   progress: number
-  logs: { timestamp: string; message: string; level: string }[]
   result: any
   error: string | null
   files?: TaskFile[]
@@ -26,15 +25,6 @@ declare global {
 
 if (!global.tasks) {
   global.tasks = new Map()
-}
-
-function addLog(taskId: string, message: string, level = 'info') {
-  const task = global.tasks.get(taskId)
-  if (task) {
-    const timestamp = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
-    task.logs.push({ timestamp, message, level })
-    global.tasks.set(taskId, task)
-  }
 }
 
 function updateTask(
@@ -71,7 +61,6 @@ function executePythonCommand(
       for (const line of lines) {
         if (line.trim().startsWith('PROGRESS:')) {
           const progressMessage = line.replace('PROGRESS:', '').trim()
-          addLog(taskId, progressMessage, 'info')
         }
       }
       stderr += data.toString()
@@ -134,6 +123,33 @@ function cleanupExpiredFiles(tempDir: string, maxAgeMs: number = 30 * 60 * 1000)
   }
 }
 
+function cleanupFitFiles(tempDir: string, processedActivities: any[]) {
+  try {
+    if (!existsSync(tempDir)) return
+
+    let deletedCount = 0
+
+    for (const activity of processedActivities) {
+      const fitFilePath = path.join(tempDir, `${activity.RideId}.fit`)
+      try {
+        if (existsSync(fitFilePath)) {
+          unlinkSync(fitFilePath)
+          deletedCount++
+          console.log(`Deleted FIT file: ${activity.RideId}.fit`)
+        }
+      } catch (err) {
+        console.error(`Failed to delete FIT file ${activity.RideId}.fit:`, err)
+      }
+    }
+
+    if (deletedCount > 0) {
+      console.log(`Cleaned up ${deletedCount} FIT files`)
+    }
+  } catch (error) {
+    console.error('Error cleaning up FIT files:', error)
+  }
+}
+
 async function processTask(
   taskId: string,
   username: string,
@@ -145,22 +161,16 @@ async function processTask(
 ) {
   try {
     console.log('=== Starting processTask for:', taskId, '===')
-    addLog(taskId, '正在登录 IGPSPORT...', 'info')
     const client = new IGPSPORTClient()
     await client.login(username, password)
-    addLog(taskId, '登录成功', 'success')
 
     updateTask(taskId, { progress: 10 })
 
-    addLog(taskId, '正在获取活动列表...', 'info')
     const activities = await client.getAllActivities((page, total) => {
-      addLog(taskId, `正在获取第 ${page} 页活动...`, 'info')
       updateTask(taskId, { progress: 10 + (page * 5) })
     })
-    addLog(taskId, `总共获取到 ${activities.length} 个活动`, 'info')
 
     const outdoorActivities = activities.filter((a) => a.Title !== '室内骑行')
-    addLog(taskId, `找到 ${outdoorActivities.length} 个户外骑行`, 'info')
 
     updateTask(taskId, { progress: 30 })
 
@@ -173,13 +183,11 @@ async function processTask(
 
     const processedActivities: any[] = []
 
-    const BATCH_SIZE =5
+    const BATCH_SIZE = 5
     for (let batchStart = 0; batchStart < outdoorActivities.length; batchStart += BATCH_SIZE) {
       const batch = outdoorActivities.slice(batchStart, batchStart + BATCH_SIZE)
-      const batchIndex = Math.floor(batchStart / BATCH_SIZE) +1
+      const batchIndex = Math.floor(batchStart / BATCH_SIZE) + 1
       const totalBatches = Math.ceil(outdoorActivities.length / BATCH_SIZE)
-
-      addLog(taskId, `正在处理第 ${batchIndex}/${totalBatches} 批次（${batch.length} 个活动）...`, 'info')
 
       const batchResults = await Promise.all(
         batch.map(async (activity) => {
@@ -193,7 +201,6 @@ async function processTask(
             return { success: true, activity }
           } catch (error: any) {
             console.error('Error processing activity:', error)
-            addLog(taskId, `处理活动 ${activity.RideId} 失败: ${error.message}`, 'error')
             return { success: false, activity, error: error.message }
           }
         })
@@ -205,8 +212,6 @@ async function processTask(
       const progress = 30 + (processedActivities.length / outdoorActivities.length) * 40
       updateTask(taskId, { progress })
     }
-
-    addLog(taskId, `成功处理 ${processedActivities.length} 个活动`, 'success')
 
     updateTask(taskId, { progress: 70 })
 
@@ -220,9 +225,7 @@ async function processTask(
       files: [] as TaskFile[],
     }
 
-    if (generateCombinedMap && processedActivities.length >0) {
-      addLog(taskId, '正在生成轨迹合成图...', 'info')
-
+    if (generateCombinedMap && processedActivities.length > 0) {
       const pythonScriptPath = path.join(process.cwd(), 'lib/python/generate_combined_map.py')
       const combinedMapFilename = `combined_map_${taskId}.png`
       const combinedMapPath = `${tempDir}/${combinedMapFilename}`
@@ -261,22 +264,16 @@ async function processTask(
               createdAt: Date.now(),
             })
             console.log('Combined map generated successfully')
-            addLog(taskId, `轨迹合成图已生成: ${combinedMapFilename} (${pythonResult.total_tracks} 个轨迹，${pythonResult.grid_size})`, 'success')
-          } else {
-            addLog(taskId, `生成轨迹合成图失败: ${pythonResult.error}`, 'error')
           }
         }
 
         updateTask(taskId, { progress: 85 })
       } catch (error: any) {
         console.error('Python execution error:', error)
-        addLog(taskId, `生成轨迹合成图失败: ${error.message}`, 'error')
       }
     }
 
     if (generateOverlayMaps) {
-      addLog(taskId, '正在生成轨迹叠加网页...', 'info')
-
       const pythonScriptPath = path.join(process.cwd(), 'lib/python/generate_multiple_overlays.py')
 
       const fitFilePaths = processedActivities.map(a => `${tempDir}/${a.RideId}.fit`)
@@ -311,24 +308,21 @@ async function processTask(
               createdAt: Date.now(),
             })
             console.log(`Overlay map generated for ${overlayMapStyle}: ${overlayFilename}`)
-            addLog(taskId, `轨迹叠加网页已生成: ${overlayFilename} (${pythonResult.total_tracks} 个轨迹)`, 'success')
-          } else {
-            addLog(taskId, `生成轨迹叠加网页失败: ${pythonResult.error}`, 'error')
           }
         }
       } catch (error: any) {
         console.error('Python execution error:', error)
-        addLog(taskId, `生成轨迹叠加网页失败: ${error.message}`, 'error')
       }
 
       updateTask(taskId, { progress: 95 })
+
+      console.log('Cleaning up temporary FIT files...')
+      cleanupFitFiles(tempDir, processedActivities)
     }
 
-    addLog(taskId, '生成完成！', 'success')
     updateTask(taskId, { status: 'completed', progress: 100, result })
   } catch (error: any) {
     console.error('Process task catch:', error)
-    addLog(taskId, `处理失败: ${error.message}`, 'error')
     throw error
   }
 }
@@ -344,7 +338,7 @@ export async function POST(req: NextRequest) {
       generateCombinedMap,
       generateOverlayMaps,
       combinedMapSettings = {
-        trackWidth:4,
+        trackWidth: 4,
         margin: 300,
         columns: 6,
       }
@@ -369,15 +363,12 @@ export async function POST(req: NextRequest) {
       id: taskId,
       status: 'processing',
       progress: 0,
-      logs: [],
       result: null,
       error: null,
       files: [],
     })
 
     console.log('Task created:', taskId)
-
-    addLog(taskId, '开始生成轨迹...', 'info')
 
     processTask(
       taskId,
@@ -389,7 +380,6 @@ export async function POST(req: NextRequest) {
       combinedMapSettings
     ).catch((error) => {
       console.error('Process task error:', error)
-      addLog(taskId, `处理失败: ${error.message}`, 'error')
       updateTask(taskId, { status: 'failed', error: error.message })
     })
 
