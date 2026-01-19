@@ -13,9 +13,7 @@ WorkingDirectory=/opt/igpsport
 EnvironmentFile=/opt/igpsport/.env
 
 # Node.js 启动命令
-ExecStart=/usr/bin/node /opt/igpsport/.next/standalone/server.js
-ExecReload=/bin/kill -s HUP $MAINPID
-ExecStop=/bin/kill -s SIGTERM $MAINPID
+ExecStart=/usr/local/bin/node /opt/igpsport/.next/standalone/server.js
 
 # 重启策略
 Restart=always
