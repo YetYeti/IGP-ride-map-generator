@@ -1,0 +1,40 @@
+[Unit]
+Description=IGPSPORT Ride Map Generator
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=igpsport
+Group=igpsport
+WorkingDirectory=/opt/igpsport
+
+# 环境变量文件
+EnvironmentFile=/opt/igpsport/.env
+
+# Node.js 启动命令
+ExecStart=/usr/bin/node /opt/igpsport/.next/standalone/server.js
+ExecReload=/bin/kill -s HUP $MAINPID
+ExecStop=/bin/kill -s SIGTERM $MAINPID
+
+# 重启策略
+Restart=always
+RestartSec=10
+
+# 资源限制
+LimitNOFILE=65535
+TimeoutStopSec=30
+
+# 日志
+StandardOutput=append:/var/log/igpsport/app.log
+StandardError=append:/var/log/igpsport/error.log
+
+# 安全加固
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/igpsport /var/log/igpsport
+
+[Install]
+WantedBy=multi-user.target

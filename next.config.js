@@ -2,13 +2,10 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
+  output: 'standalone',
   images: {
     domains: ['localhost'],
     remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '**.vercel-storage.com',
-      },
       {
         protocol: 'https',
         hostname: 'tile.openstreetmap.org',

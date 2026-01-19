@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { writeFileSync, existsSync, mkdirSync, readFileSync, unlinkSync } from 'fs'
 import { spawn } from 'child_process'
 import { IGPSPORTClient } from '@/lib/igpsport'
+import { saveTask, updateTask, getTask } from '@/lib/file-task-manager'
 import path from 'path'
 
 interface Task {
@@ -14,34 +15,13 @@ interface Task {
   error: string | null
 }
 
-declare global {
-  var tasks: Map<string, Task>
-}
-
-if (!global.tasks) {
-  global.tasks = new Map()
-}
-
 function addLog(taskId: string, message: string, level = 'info') {
-  const task = global.tasks.get(taskId)
+  const task = getTask(taskId)
   if (task) {
     const timestamp = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
     task.logs.push({ timestamp, message, level })
-    global.tasks.set(taskId, task)
+    saveTask(taskId, task)
   }
-}
-
-function updateTask(
-  taskId: string,
-  updates: Partial<Task>
-): Task | undefined {
-  const task = global.tasks.get(taskId)
-  if (task) {
-    const updated = { ...task, ...updates }
-    global.tasks.set(taskId, updated)
-    return updated
-  }
-  return undefined
 }
 
 
@@ -125,7 +105,7 @@ async function processTask(
 
     updateTask(taskId, { progress: 30 })
 
-    const outputDir = process.env.VERCEL ? '/tmp/output' : process.cwd() + '/public/output'
+    const outputDir = process.env.OUTPUT_DIR || process.cwd() + '/public/output'
     if (!existsSync(outputDir)) {
       mkdirSync(outputDir, { recursive: true })
     }
@@ -321,7 +301,7 @@ export async function POST(req: NextRequest) {
     const taskId = uuidv4()
     console.log('Created task ID:', taskId)
 
-    global.tasks.set(taskId, {
+    saveTask(taskId, {
       id: taskId,
       status: 'processing',
       progress: 0,
@@ -330,7 +310,7 @@ export async function POST(req: NextRequest) {
       error: null,
     })
 
-    console.log('Available tasks:', Array.from(global.tasks.keys()))
+    console.log('Task created:', taskId)
 
     addLog(taskId, '开始生成轨迹...', 'info')
 

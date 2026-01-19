@@ -13,8 +13,9 @@ export async function GET(
     return NextResponse.json({ error: 'Invalid filename' }, { status: 400 })
   }
 
-  // 根据环境选择输出目录
-  const filePath = process.env.VERCEL ? `/tmp/output/${filename}` : `public/output/${filename}`
+  // 根据环境变量选择输出目录
+  const outputDir = process.env.OUTPUT_DIR || process.cwd() + '/public/output'
+  const filePath = `${outputDir}/${filename}`
 
   if (!existsSync(filePath)) {
     return NextResponse.json(
