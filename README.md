@@ -110,7 +110,7 @@ sudo useradd -r -s /bin/false igpsport
 
 # 创建目录结构
 sudo mkdir -p /opt/igpsport
-sudo mkdir -p /var/lib/igpsport/{output,fit}
+sudo mkdir -p /var/lib/igpsport/temp
 sudo mkdir -p /var/log/igpsport
 
 # 设置权限
@@ -370,7 +370,6 @@ IGPSPORT_RIDE_MAP_VERCEL/
 NODE_ENV=production
 PORT=3000
 TEMP_DIR=/var/lib/igpsport/temp
-FIT_DIR=public/fit
 ```
 
 ## 地图样式
