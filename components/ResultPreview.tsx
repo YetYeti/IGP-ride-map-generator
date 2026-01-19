@@ -89,30 +89,6 @@ export function ResultPreview({ result }: ResultPreviewProps) {
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>处理统计</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="grid grid-cols-3 gap-4 text-center">
-            <div>
-              <div className="text-2xl font-bold">{result.totalActivities}</div>
-              <div className="text-sm text-gray-600">总活动数</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold">{result.outdoorActivities}</div>
-              <div className="text-sm text-gray-600">户外骑行</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold">
-                {result.processedActivities}
-              </div>
-              <div className="text-sm text-gray-600">已处理</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {result.combinedMaps.length > 0 && (
         <Card>
           <CardHeader>
