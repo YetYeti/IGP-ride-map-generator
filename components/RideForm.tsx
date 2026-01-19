@@ -45,6 +45,8 @@ export function RideForm({ onSubmit, loading }: RideFormProps) {
     onSubmit(formData)
   }
 
+  const canSubmit = !loading && formData.username.trim() !== '' && formData.password.trim() !== ''
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <Input
@@ -52,7 +54,7 @@ export function RideForm({ onSubmit, loading }: RideFormProps) {
         type="text"
         placeholder="请输入您的 IGPSPORT 账号"
         value={formData.username}
-        onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+        onChange={(e) => setFormData({ ...formData, username: e.currentTarget.value })}
         required
         disabled={loading}
       />
@@ -62,7 +64,7 @@ export function RideForm({ onSubmit, loading }: RideFormProps) {
         type="password"
         placeholder="请输入您的密码"
         value={formData.password}
-        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+        onChange={(e) => setFormData({ ...formData, password: e.currentTarget.value })}
         required
         disabled={loading}
       />
@@ -99,7 +101,7 @@ export function RideForm({ onSubmit, loading }: RideFormProps) {
         type="submit"
         size="lg"
         className="w-full"
-        disabled={loading || !formData.username || !formData.password}
+        disabled={!canSubmit}
       >
         {loading ? '生成中...' : '生成轨迹'}
       </Button>
