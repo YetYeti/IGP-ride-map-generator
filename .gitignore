@@ -26,20 +26,17 @@ next-env.d.ts
 # debug
 npm-debug.log*
 yarn-debug.log*
-yarn-debug.log*
+yarn-error.log*
 yarn-error.log*
 
 # local env files
 .env*.local
 .env
 
-# vercel
-.vercel
-
 # Python virtual environment
 .venv/
 
-# Python 编译缓存
+# Python compilation cache
 __pycache__/
 *.pyc
 *.pyo
@@ -48,36 +45,13 @@ __pycache__/
 dist/
 *.egg-info/
 
-# Python 代码检查缓存
+# Python code checking cache
 .mypy_cache/
 .ruff_cache/
-__pycache__/
-
-# Python 字节码和优化文件
-*.pyc
-*.pyo
-*.pyo
-
-# Python 测试和 pip 缓存
-.pytest_cache/
-.pip-cache/
 
 # uv package manager
 uv.lock
 
-# output files
+# output files (keep directory but ignore contents)
 /public/output/*
 !/public/output/.gitkeep
-
-# Python virtual environment
-.venv/
-__pycache__/
-*.pyc
-*.pyo
-.pytest_cache/
-.pip-cache/
-dist/
-*.egg-info/
-
-# uv package manager
-uv.lock
