@@ -121,7 +121,7 @@ sudo mkdir -p /var/lib/igpsport/temp
 cd /opt/igpsport
 
 # 安装 Node.js 依赖
-npm ci --production
+npm ci
 
 # 安装 Python 依赖
 uv sync
@@ -264,7 +264,7 @@ cd /opt/igpsport
 sudo git pull origin main
 
 # 3. 安装依赖并构建
-sudo -u igpsport npm ci --production
+sudo -u igpsport npm ci
 sudo -u igpsport uv sync
 sudo -u igpsport npm run build
 
