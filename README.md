@@ -45,7 +45,7 @@ npm run dev
 
 - CentOS 7 服务器（建议 2GB+ RAM）
 - sudo 权限
-- 域名（可选，用于 HTTPS）
+- 域名：ride.matrix02.com
 
 ### 服务器准备
 
@@ -104,52 +104,37 @@ sudo systemctl status nginx
 
 ### 应用部署
 
-#### 1. 创建系统用户
-
-```bash
-# 创建专用用户
-sudo useradd -r -s /bin/false igpsport
-
-# 创建目录结构
-sudo mkdir -p /opt/igpsport
-sudo mkdir -p /var/lib/igpsport/temp
-
-# 设置权限
-sudo chown -R igpsport:igpsport /opt/igpsport /var/lib/igpsport
-sudo chmod -R 755 /var/lib/igpsport
-```
-
-#### 2. 部署应用代码
+#### 1. 部署应用代码
 
 ```bash
 # 克隆代码到 /opt/igpsport
 cd /opt
 sudo git clone <your-repository-url> igpsport
 
-# 设置权限
-sudo chown -R igpsport:igpsport /opt/igpsport
+# 创建临时文件目录
+sudo mkdir -p /var/lib/igpsport/temp
 ```
 
-#### 3. 安装依赖
+#### 2. 安装依赖
 
 ```bash
 cd /opt/igpsport
 
 # 安装 Node.js 依赖
-sudo -u igpsport npm ci --production
+npm ci --production
 
 # 安装 Python 依赖
-sudo -u igpsport uv sync
+uv sync
 ```
 
-#### 4. 配置环境变量
+#### 3. 配置环境变量
 
 ```bash
 # 复制环境变量模板
-sudo cp .env.example .env
+cp .env.example .env
 
 # 编辑环境变量
-sudo vi .env
+vi .env
 ```
 
 编辑 `.env` 文件，配置必要的环境变量：
@@ -160,18 +145,18 @@ PORT=3000
 TEMP_DIR=/var/lib/igpsport/temp
 ```
 
-#### 5. 构建应用
+#### 4. 构建应用
 
 ```bash
 cd /opt/igpsport
 
 # 构建应用（standalone 模式）
-sudo -u igpsport npm run build
+npm run build
 ```
 
 构建成功后，会在 `.next/standalone` 目录生成独立运行文件。
 
-#### 6. 配置 systemd 服务
+#### 5. 配置 systemd 服务
 
 ```bash
 # 复制 systemd 服务文件
@@ -204,10 +189,8 @@ sudo journalctl -u igpsport -f
 # 复制 Nginx 配置文件
 sudo cp deployments/nginx.conf /etc/nginx/conf.d/igpsport.conf
 
-# 编辑配置文件，修改域名
+# 编辑配置文件，修改域名（默认为 ride.matrix02.com）
 sudo vi /etc/nginx/conf.d/igpsport.conf
-
-# 将 your-domain.com 替换为你的实际域名
 ```
 
 #### 2. 测试配置
@@ -223,37 +206,12 @@ sudo systemctl reload nginx
 #### 3. 配置防火墙
 
 ```bash
-# 开放 HTTP 和 HTTPS 端口
+# 开放 HTTP 端口
 sudo firewall-cmd --permanent --add-service=http
-sudo firewall-cmd --permanent --add-service=https
 sudo firewall-cmd --reload
 
 # 验证规则
 sudo firewall-cmd --list-all
-```
-
-### SSL 证书配置
-
-#### 使用 Let's Encrypt 获取免费 SSL 证书
-
-```bash
-# 安装 Certbot
-sudo yum install -y certbot python2-certbot-nginx
-
-# 获取 SSL 证书（会自动配置 Nginx）
-sudo certbot --nginx -d your-domain.com
-
-# 按照提示输入邮箱并同意条款
-```
-
-#### 自动续期
-
-```bash
-# 添加自动续期任务到 crontab
-echo "0 0,12 * * * root certbot renew --quiet" | sudo tee -a /etc/cron.d/certbot-renew
-
-# 查看续期定时任务
-sudo cat /etc/cron.d/certbot-renew
 ```
 
 ### 服务管理
