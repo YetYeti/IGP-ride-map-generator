@@ -45,7 +45,7 @@ npm run dev
 
 - CentOS 7 服务器（建议 2GB+ RAM）
 - sudo 权限
-- 域名：ride.matrix02.com
+- 域名（可选，用于访问）
 
 ### 服务器准备
 
@@ -189,8 +189,10 @@ sudo journalctl -u igpsport -f
 # 复制 Nginx 配置文件
 sudo cp deployments/nginx.conf /etc/nginx/conf.d/igpsport.conf
 
-# 编辑配置文件，修改域名（默认为 ride.matrix02.com）
+# 编辑配置文件，修改域名
 sudo vi /etc/nginx/conf.d/igpsport.conf
+
+# 将 your-domain.com 替换为你的实际域名
 ```
 
 #### 2. 测试配置
