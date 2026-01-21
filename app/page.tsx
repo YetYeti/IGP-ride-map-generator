@@ -8,6 +8,7 @@ import { ResultPreview, GenerationResult } from '@/components/ResultPreview'
 import { MapStyle } from '@/lib/map-styles'
 
 interface CombinedMapSettings {
+  layoutPreset: 'compact' | 'standard' | 'loose' | 'custom'
   trackWidth: number
   trackSpacing: number
   columns: number

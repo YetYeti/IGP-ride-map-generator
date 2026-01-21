@@ -7,6 +7,7 @@ import { TrackSettings } from './TrackSettings'
 import { MapStyle } from '../lib/map-styles'
 
 interface CombinedMapSettings {
+  layoutPreset: 'compact' | 'standard' | 'loose' | 'custom'
   trackWidth: number
   trackSpacing: number
   columns: number
@@ -35,6 +36,7 @@ export function RideForm({ onSubmit, loading }: RideFormProps) {
     generateCombinedMap: true,
     generateOverlayMaps: true,
     combinedMapSettings: {
+      layoutPreset: 'standard',
       trackWidth: 4,
       trackSpacing: 300,
       columns: 6,

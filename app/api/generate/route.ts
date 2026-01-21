@@ -96,6 +96,7 @@ function executePythonCommand(
 }
 
 interface CombinedMapSettings {
+  layoutPreset: 'compact' | 'standard' | 'loose' | 'custom'
   trackWidth: number
   trackSpacing: number
   columns: number
@@ -375,6 +376,7 @@ export async function POST(req: NextRequest) {
       generateCombinedMap,
       generateOverlayMaps,
       combinedMapSettings = {
+        layoutPreset: 'standard',
         trackWidth: 4,
         trackSpacing: 300,
         columns: 6,
