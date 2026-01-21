@@ -6,8 +6,9 @@ import { MapStyle, MapStyleLabels } from '../lib/map-styles'
 
 interface CombinedMapSettings {
   trackWidth: number
-  margin: number
+  trackSpacing: number
   columns: number
+  trackPadding: number
 }
 
 interface TrackSettingsProps {
@@ -38,7 +39,7 @@ function NumberInput({ label, value, min, max, step = 1, onChange }: NumberInput
   }, [value])
 
   const handleBlur = () => {
-    const num = parseInt(inputValue)
+    const num = Number(inputValue)
     if (isNaN(num)) {
       setInputValue(value.toString())
     } else {
@@ -151,7 +152,7 @@ export function TrackSettings({
           <h3 className="text-sm font-semibold mb-4">轨迹合成图设置</h3>
           <div className="space-y-3">
             <NumberInput
-              label="轨迹粗细 (1-10)"
+              label="轨迹线条粗细"
               value={combinedMapSettings.trackWidth}
               min={1}
               max={10}
@@ -159,20 +160,28 @@ export function TrackSettings({
               onChange={(value) => handleCombinedMapSettingsChange('trackWidth', value)}
             />
             <NumberInput
-              label="间隔 (像素) (0-1000)"
-              value={combinedMapSettings.margin}
+              label="小图之间间隔（像素）"
+              value={combinedMapSettings.trackSpacing}
               min={0}
               max={1000}
-              step={50}
-              onChange={(value) => handleCombinedMapSettingsChange('margin', value)}
+              step={10}
+              onChange={(value) => handleCombinedMapSettingsChange('trackSpacing', value)}
             />
             <NumberInput
-              label="每行个数 (1-10)"
+              label="每行小图数量"
               value={combinedMapSettings.columns}
               min={1}
               max={10}
               step={1}
               onChange={(value) => handleCombinedMapSettingsChange('columns', value)}
+            />
+            <NumberInput
+              label="轨迹周围留白比例"
+              value={combinedMapSettings.trackPadding}
+              min={0}
+              max={0.5}
+              step={0.05}
+              onChange={(value) => handleCombinedMapSettingsChange('trackPadding', value)}
             />
           </div>
         </div>

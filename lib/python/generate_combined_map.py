@@ -19,12 +19,12 @@ import math
 # 常量
 TRACK_COLOR = "#F1532E"
 DEFAULT_TRACK_LINEWIDTH = 4
-DEFAULT_MARGIN = 300
+DEFAULT_TRACK_SPACING = 300
 DEFAULT_COLUMNS = 6
 BACKGROUND_COLOR = "black"
-IMAGE_DPI = 100
-FIG_SIZE_PURE = (10, 10)
-MAP_MARGIN_RATIO = 0.1  # 地图边距比例 (相对于最大范围)
+IMAGE_DPI = 200
+FIG_SIZE_PURE = (12, 12)
+DEFAULT_TRACK_PADDING = 0.1  # 地图边距比例 (相对于最大范围)
 
 
 def print_progress(message: str):
@@ -37,13 +37,16 @@ def _extract_ride_id(filepath: str) -> int:
     return int(match.group(1)) if match else 0
 
 
-def _set_map_bounds(ax, lats: List[float], longs: List[float]):
+def _set_map_bounds(
+    ax, lats: List[float], longs: List[float], track_padding: float = DEFAULT_TRACK_PADDING
+):
     """设置地图范围，确保轨迹居中且保持正确的宽高比
 
     Args:
         ax: matplotlib axes对象
         lats: 纬度列表
         longs: 经度列表
+        track_padding: 轨迹内边距比例
     """
     lat_min, lat_max = min(lats), max(lats)
     long_min, long_max = min(longs), max(longs)
@@ -58,11 +61,11 @@ def _set_map_bounds(ax, lats: List[float], longs: List[float]):
 
     # 确定最大范围，确保轨迹居中
     max_range = max(lat_range, long_range)
-    margin = max_range * MAP_MARGIN_RATIO
+    padding = max_range * track_padding
 
     # 设置地图范围
-    ax.set_xlim(long_center - (max_range + margin) / 2, long_center + (max_range + margin) / 2)
-    ax.set_ylim(lat_center - (max_range + margin) / 2, lat_center + (max_range + margin) / 2)
+    ax.set_xlim(long_center - (max_range + padding) / 2, long_center + (max_range + padding) / 2)
+    ax.set_ylim(lat_center - (max_range + padding) / 2, lat_center + (max_range + padding) / 2)
 
     # 确保宽高比正确
     ax.set_aspect("equal")
@@ -90,7 +93,10 @@ def extract_gps_data(fit_file_path: str) -> List[Tuple[float, float]]:
 
 
 def generate_single_track(
-    gps_data: List[Tuple[float, float]], output_path: str, track_width: int
+    gps_data: List[Tuple[float, float]],
+    output_path: str,
+    track_width: int,
+    track_padding: float = DEFAULT_TRACK_PADDING,
 ) -> bool:
     """生成单个轨迹图"""
     if not gps_data:
@@ -108,7 +114,7 @@ def generate_single_track(
         ax.set_axis_off()
 
         # 设置地图范围，确保轨迹居中且保持正确的宽高比
-        _set_map_bounds(ax, lats, longs)
+        _set_map_bounds(ax, lats, longs, track_padding)
 
         plt.savefig(
             output_path, dpi=IMAGE_DPI, bbox_inches="tight", pad_inches=0, transparent=False
@@ -122,7 +128,7 @@ def generate_single_track(
 
 
 def generate_combined_map(
-    image_files: List[str], output_path: str, margin: int, columns: int
+    image_files: List[str], output_path: str, track_spacing: int, columns: int
 ) -> bool:
     """生成合并轨迹大图"""
     if not image_files:
@@ -138,8 +144,8 @@ def generate_combined_map(
         with Image.open(image_files[0]) as img:
             img_width, img_height = img.size
 
-        combined_width = (img_width * cols) + ((cols + 1) * margin)
-        combined_height = (img_height * rows) + ((rows + 1) * margin)
+        combined_width = (img_width * cols) + ((cols + 1) * track_spacing)
+        combined_height = (img_height * rows) + ((rows + 1) * track_spacing)
 
         # 创建大图
         combined_img = Image.new("RGB", (combined_width, combined_height), color="black")
@@ -149,17 +155,17 @@ def generate_combined_map(
             with Image.open(img_path) as img:
                 row = i // cols
                 col = i % cols
-                x = margin + (col * (img_width + margin))
-                y = margin + (row * (img_height + margin))
+                x = track_spacing + (col * (img_width + track_spacing))
+                y = track_spacing + (row * (img_height + track_spacing))
                 combined_img.paste(img, (x, y))
 
-        # 缩放到固定宽度1200
-        target_width = 1200
+        # 缩放到固定宽度2400
+        target_width = 2400
         scale_ratio = target_width / combined_width
         new_height = int(combined_height * scale_ratio)
         combined_img = combined_img.resize((target_width, new_height), Image.Resampling.LANCZOS)
 
-        combined_img.save(output_path, quality=95)
+        combined_img.save(output_path, format="PNG", optimize=True)
 
         return True
     except Exception as e:
@@ -173,8 +179,11 @@ def main():
     parser.add_argument("fit_files", nargs="+", help="FIT文件路径")
     parser.add_argument("output_path", help="输出文件路径")
     parser.add_argument("--track-width", type=int, default=DEFAULT_TRACK_LINEWIDTH, help="轨迹线宽")
-    parser.add_argument("--margin", type=int, default=DEFAULT_MARGIN, help="图片间距")
+    parser.add_argument("--track-spacing", type=int, default=DEFAULT_TRACK_SPACING, help="轨迹间距")
     parser.add_argument("--columns", type=int, default=DEFAULT_COLUMNS, help="每列图片数")
+    parser.add_argument(
+        "--track-padding", type=float, default=DEFAULT_TRACK_PADDING, help="轨迹内边距"
+    )
 
     args = parser.parse_args()
 
@@ -199,7 +208,9 @@ def main():
 
             ride_id = os.path.splitext(os.path.basename(fit_file))[0]
             temp_image_path = os.path.join(temp_dir, f"{ride_id}.png")
-            if generate_single_track(gps_data, temp_image_path, args.track_width):
+            if generate_single_track(
+                gps_data, temp_image_path, args.track_width, args.track_padding
+            ):
                 generated_images.append(temp_image_path)
 
         print_progress(f"成功生成 {len(generated_images)} 个轨迹图")
@@ -208,7 +219,7 @@ def main():
         if generated_images:
             print_progress("正在生成合并大图...")
             success = generate_combined_map(
-                generated_images, args.output_path, args.margin, args.columns
+                generated_images, args.output_path, args.track_spacing, args.columns
             )
 
             if success:

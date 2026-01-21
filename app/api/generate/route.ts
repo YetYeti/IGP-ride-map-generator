@@ -97,8 +97,9 @@ function executePythonCommand(
 
 interface CombinedMapSettings {
   trackWidth: number
-  margin: number
+  trackSpacing: number
   columns: number
+  trackPadding: number
 }
 
 function cleanupExpiredFiles(tempDir: string, maxAgeMs: number = 30 * 60 * 1000) {
@@ -264,10 +265,12 @@ async function processTask(
           combinedMapPath,
           '--track-width',
           combinedMapSettings.trackWidth.toString(),
-          '--margin',
-          combinedMapSettings.margin.toString(),
+          '--track-spacing',
+          combinedMapSettings.trackSpacing.toString(),
           '--columns',
           combinedMapSettings.columns.toString(),
+          '--track-padding',
+          combinedMapSettings.trackPadding.toString(),
         ]
 
         const { stdout } = await executePythonCommand(pythonScriptPath, args, taskId)
@@ -373,8 +376,9 @@ export async function POST(req: NextRequest) {
       generateOverlayMaps,
       combinedMapSettings = {
         trackWidth: 4,
-        margin: 300,
+        trackSpacing: 300,
         columns: 6,
+        trackPadding: 0.1,
       }
     } = body
 

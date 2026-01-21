@@ -8,8 +8,9 @@ import { MapStyle } from '../lib/map-styles'
 
 interface CombinedMapSettings {
   trackWidth: number
-  margin: number
+  trackSpacing: number
   columns: number
+  trackPadding: number
 }
 
 interface RideFormData {
@@ -35,8 +36,9 @@ export function RideForm({ onSubmit, loading }: RideFormProps) {
     generateOverlayMaps: true,
     combinedMapSettings: {
       trackWidth: 4,
-      margin: 300,
+      trackSpacing: 300,
       columns: 6,
+      trackPadding: 0.1,
     },
   })
 

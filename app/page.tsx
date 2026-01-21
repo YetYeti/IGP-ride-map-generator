@@ -9,8 +9,9 @@ import { MapStyle } from '@/lib/map-styles'
 
 interface CombinedMapSettings {
   trackWidth: number
-  margin: number
+  trackSpacing: number
   columns: number
+  trackPadding: number
 }
 
 interface RideFormData {
