@@ -185,6 +185,7 @@ async function processTask(
     })
 
     const outdoorActivities = activities.filter((a) => a.Title !== '室内骑行')
+    outdoorActivities.sort((a, b) => a.RideId - b.RideId)
     addLog(taskId, `找到 ${outdoorActivities.length} 个户外骑行`, 'info')
 
     updateTask(taskId, { progress: 30 })

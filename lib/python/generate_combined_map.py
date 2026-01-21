@@ -4,6 +4,7 @@
 import sys
 import os
 import json
+import re
 import traceback
 import argparse
 from typing import List, Tuple
@@ -29,6 +30,11 @@ MAP_MARGIN_RATIO = 0.1  # 地图边距比例 (相对于最大范围)
 def print_progress(message: str):
     """输出进度信息到 stderr"""
     print(f"PROGRESS: {message}", file=sys.stderr, flush=True)
+
+
+def _extract_ride_id(filepath: str) -> int:
+    match = re.search(r"(\d+)\.png$", os.path.basename(filepath))
+    return int(match.group(1)) if match else 0
 
 
 def _set_map_bounds(ax, lats: List[float], longs: List[float]):
@@ -123,7 +129,7 @@ def generate_combined_map(
         return False
 
     try:
-        image_files.sort()
+        image_files.sort(key=_extract_ride_id)
         num_images = len(image_files)
         cols = columns
         rows = math.ceil(num_images / cols)
@@ -191,7 +197,8 @@ def main():
             if not gps_data:
                 continue
 
-            temp_image_path = os.path.join(temp_dir, f"track_{i}.png")
+            ride_id = os.path.splitext(os.path.basename(fit_file))[0]
+            temp_image_path = os.path.join(temp_dir, f"{ride_id}.png")
             if generate_single_track(gps_data, temp_image_path, args.track_width):
                 generated_images.append(temp_image_path)
 
