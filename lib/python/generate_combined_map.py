@@ -23,11 +23,43 @@ DEFAULT_COLUMNS = 6
 BACKGROUND_COLOR = "black"
 IMAGE_DPI = 100
 FIG_SIZE_PURE = (10, 10)
+MAP_MARGIN_RATIO = 0.1  # 地图边距比例 (相对于最大范围)
 
 
 def print_progress(message: str):
     """输出进度信息到 stderr"""
     print(f"PROGRESS: {message}", file=sys.stderr, flush=True)
+
+
+def _set_map_bounds(ax, lats: List[float], longs: List[float]):
+    """设置地图范围，确保轨迹居中且保持正确的宽高比
+
+    Args:
+        ax: matplotlib axes对象
+        lats: 纬度列表
+        longs: 经度列表
+    """
+    lat_min, lat_max = min(lats), max(lats)
+    long_min, long_max = min(longs), max(longs)
+
+    # 计算经纬度范围
+    lat_range = lat_max - lat_min
+    long_range = long_max - long_min
+
+    # 计算中心点
+    lat_center = (lat_min + lat_max) / 2
+    long_center = (long_min + long_max) / 2
+
+    # 确定最大范围，确保轨迹居中
+    max_range = max(lat_range, long_range)
+    margin = max_range * MAP_MARGIN_RATIO
+
+    # 设置地图范围
+    ax.set_xlim(long_center - (max_range + margin) / 2, long_center + (max_range + margin) / 2)
+    ax.set_ylim(lat_center - (max_range + margin) / 2, lat_center + (max_range + margin) / 2)
+
+    # 确保宽高比正确
+    ax.set_aspect("equal")
 
 
 def extract_gps_data(fit_file_path: str) -> List[Tuple[float, float]]:
@@ -69,7 +101,12 @@ def generate_single_track(
         ax.plot(longs, lats, color=TRACK_COLOR, linewidth=track_width, alpha=1.0)
         ax.set_axis_off()
 
-        plt.savefig(output_path, dpi=IMAGE_DPI, bbox_inches="tight", transparent=False)
+        # 设置地图范围，确保轨迹居中且保持正确的宽高比
+        _set_map_bounds(ax, lats, longs)
+
+        plt.savefig(
+            output_path, dpi=IMAGE_DPI, bbox_inches="tight", pad_inches=0, transparent=False
+        )
         plt.close()
 
         return True
