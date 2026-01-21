@@ -14,11 +14,6 @@ interface LogDisplayProps {
 }
 
 export function LogDisplay({ logs = [] }: LogDisplayProps) {
-  const logEndRef = React.useRef<HTMLDivElement>(null)
-
-  React.useEffect(() => {
-    logEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [logs])
 
   const getLevelColor = (level: LogEntry['level']) => {
     switch (level) {
@@ -44,16 +39,13 @@ export function LogDisplay({ logs = [] }: LogDisplayProps) {
             <p className="text-sm text-gray-500 text-center py-8">
               暂无日志
             </p>
-          ) : (
-            <>
-              {logs.map((log, index) => (
-                <div key={index} className="text-sm font-mono break-words">
-                  <span className="text-gray-500">[{log.timestamp}]</span>{' '}
-                  <span className={getLevelColor(log.level)}>{log.message}</span>
-                </div>
-              ))}
-              <div ref={logEndRef} />
-            </>
+           ) : (
+            logs.map((log, index) => (
+              <div key={index} className="text-sm font-mono break-words">
+                <span className="text-gray-500">[{log.timestamp}]</span>{' '}
+                <span className={getLevelColor(log.level)}>{log.message}</span>
+              </div>
+            ))
           )}
         </div>
       </CardContent>

@@ -19,9 +19,9 @@ const LAYOUT_PRESETS = {
     label: '紧凑布局',
     description: '更多小图，但轨迹较小',
     settings: {
-      trackWidth: 3,
-      trackSpacing: 150,
-      columns: 8,
+      trackWidth: 6,
+      trackSpacing: 100,
+      columns: 7,
       trackPadding: 0.2,
     },
   },
@@ -29,7 +29,7 @@ const LAYOUT_PRESETS = {
     label: '标准布局',
     description: '平衡效果',
     settings: {
-      trackWidth: 4,
+      trackWidth: 8,
       trackSpacing: 300,
       columns: 6,
       trackPadding: 0.1,
@@ -39,9 +39,9 @@ const LAYOUT_PRESETS = {
     label: '宽松布局',
     description: '轨迹更清晰，但每页小图更少',
     settings: {
-      trackWidth: 5,
+      trackWidth: 8,
       trackSpacing: 500,
-      columns: 4,
+      columns: 5,
       trackPadding: 0.05,
     },
   },

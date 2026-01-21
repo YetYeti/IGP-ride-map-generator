@@ -377,7 +377,7 @@ export async function POST(req: NextRequest) {
       generateOverlayMaps,
       combinedMapSettings = {
         layoutPreset: 'standard',
-        trackWidth: 4,
+        trackWidth: 8,
         trackSpacing: 300,
         columns: 6,
         trackPadding: 0.1,
