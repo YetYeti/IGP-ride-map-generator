@@ -8,7 +8,7 @@ const PORT = process.env.PORT || DEFAULT_PORT
 // 清理端口函数
 function killPort(port) {
   const isWindows = platform() === 'win32'
-
+  
   if (isWindows) {
     // Windows: 使用 netstat + taskkill
     exec(`netstat -ano | findstr :${port}`, (error, stdout) => {
@@ -46,25 +46,38 @@ function cleanup() {
   process.exit(0)
 }
 
-// 监听退出信号
-process.on('SIGINT', cleanup)   // Ctrl+C
-process.on('SIGTERM', cleanup)  // kill 命令
-process.on('exit', cleanup)     // 正常退出
+// 先清理端口（避免启动时冲突）
+console.log('正在清理端口 ' + PORT + ' (启动前)...')
+killPort(PORT)
 
-// 启动 Next.js 开发服务器
-console.log('正在启动开发服务器，端口:', PORT)
-const nextDev = spawn('next', ['dev'], {
-  stdio: 'inherit',
-  shell: platform() === 'win32'
-})
+// 等待一小段时间确保端口清理完成
+setTimeout(() => {
+  // 监听退出信号
+  process.on('SIGINT', cleanup)   // Ctrl+C
+  process.on('SIGTERM', cleanup)  // kill 命令
+  process.on('exit', cleanup)     // 正常退出
 
-// Next.js 退出时也清理
-nextDev.on('exit', (code) => {
-  console.log(`开发服务器已退出 (code: ${code})`)
-  cleanup()
-})
+  // 启动 Next.js 开发服务器
+  console.log('正在启动开发服务器，端口:', PORT)
+  const isWindows = platform() === 'win32'
 
-nextDev.on('error', (err) => {
-  console.error('启动失败:', err)
-  cleanup()
-})
+  // 使用 npx 运行 next，确保能找到命令
+  const nextPath = isWindows ? 'npx.cmd' : 'npx'
+  const nextArgs = ['next', 'dev']
+
+  const nextDev = spawn(nextPath, nextArgs, {
+    stdio: 'inherit',
+    shell: isWindows
+  })
+
+  // Next.js 退出时也清理
+  nextDev.on('exit', (code) => {
+    console.log(`开发服务器已退出 (code: ${code})`)
+    cleanup()
+  })
+
+  nextDev.on('error', (err) => {
+    console.error('启动失败:', err)
+    cleanup()
+  })
+}, 500)
