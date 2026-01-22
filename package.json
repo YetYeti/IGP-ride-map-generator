@@ -3,8 +3,8 @@
   "version": "2.0.0",
   "private": true,
   "scripts": {
-    "dev": "node scripts/dev.js",
-    "dev:clean": "node scripts/dev.js --clean-only",
+    "dev": "lsof -ti:3000 | xargs kill -9 2>/dev/null; next dev",
+    "dev:clean": "lsof -ti:3000 | xargs kill -9 2>/dev/null; echo '端口 3000 已清理'",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
