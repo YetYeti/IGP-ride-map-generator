@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useRef, useEffect } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from './ui/Card'
 
 export interface LogEntry {
@@ -11,9 +11,11 @@ export interface LogEntry {
 
 interface LogDisplayProps {
   logs?: LogEntry[]
+  id?: string
 }
 
-export function LogDisplay({ logs = [] }: LogDisplayProps) {
+export function LogDisplay({ logs = [], id }: LogDisplayProps) {
+  const logContainerRef = useRef<HTMLDivElement>(null)
 
   const getLevelColor = (level: LogEntry['level']) => {
     switch (level) {
@@ -28,13 +30,19 @@ export function LogDisplay({ logs = [] }: LogDisplayProps) {
     }
   }
 
+  useEffect(() => {
+    if (logContainerRef.current) {
+      logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight
+    }
+  }, [logs])
+
   return (
-    <Card className="overflow-hidden">
+    <Card id={id} className="overflow-hidden">
       <CardHeader className="pb-2">
         <CardTitle className="text-lg">处理日志</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
-        <div className="h-96 overflow-y-auto custom-scrollbar bg-gray-50 p-4 space-y-1">
+        <div ref={logContainerRef} className="h-96 overflow-y-auto custom-scrollbar bg-gray-50 p-4 space-y-1">
           {logs.length === 0 ? (
             <p className="text-sm text-gray-500 text-center py-8">
               暂无日志

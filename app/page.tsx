@@ -56,11 +56,16 @@ export default function Home() {
 
       setTaskId(responseData.taskId)
       pollTaskStatus(responseData.taskId)
+
+      // 滚动到日志区域
+      const logDisplayElement = document.getElementById('log-display')
+      if (logDisplayElement) {
+        logDisplayElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
     } catch (error: any) {
       console.error('Submit error:', error)
       const timestamp = new Date().toLocaleTimeString('zh-CN')
       setLogs([{ timestamp, message: error.message, level: 'error' }])
-    } finally {
       setLoading(false)
     }
   }
@@ -129,7 +134,7 @@ export default function Home() {
               </CardContent>
             </Card>
 
-            <LogDisplay logs={logs} />
+            <LogDisplay id="log-display" logs={logs} />
           </div>
 
           <div className="space-y-8">
