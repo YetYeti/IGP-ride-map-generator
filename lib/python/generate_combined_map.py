@@ -130,7 +130,7 @@ def generate_single_track(
 def generate_combined_map(
     image_files: List[str], output_path: str, track_spacing: int, columns: int
 ) -> bool:
-    """生成合并轨迹大图"""
+    """生成合并轨迹大图（优化版：预先缩放，减少内存占用）"""
     if not image_files:
         return False
 
@@ -144,26 +144,37 @@ def generate_combined_map(
         with Image.open(image_files[0]) as img:
             img_width, img_height = img.size
 
+        # 计算原始大图尺寸
         combined_width = (img_width * cols) + ((cols + 1) * track_spacing)
         combined_height = (img_height * rows) + ((rows + 1) * track_spacing)
 
-        # 创建大图
-        combined_img = Image.new("RGB", (combined_width, combined_height), color="black")
-
-        # 逐张粘贴图片
-        for i, img_path in enumerate(image_files):
-            with Image.open(img_path) as img:
-                row = i // cols
-                col = i % cols
-                x = track_spacing + (col * (img_width + track_spacing))
-                y = track_spacing + (row * (img_height + track_spacing))
-                combined_img.paste(img, (x, y))
-
-        # 缩放到固定宽度2400
+        # 计算目标尺寸（缩放到固定宽度2400）
         target_width = 2400
         scale_ratio = target_width / combined_width
-        new_height = int(combined_height * scale_ratio)
-        combined_img = combined_img.resize((target_width, new_height), Image.Resampling.LANCZOS)
+        target_height = int(combined_height * scale_ratio)
+
+        # 计算缩放后的单张图片尺寸和间距
+        scaled_img_width = int(img_width * scale_ratio)
+        scaled_img_height = int(img_height * scale_ratio)
+        scaled_spacing = int(track_spacing * scale_ratio)
+
+        # 创建缩放后的大图（避免创建巨大的中间图像）
+        combined_img = Image.new("RGB", (target_width, target_height), color="black")
+
+        # 逐张粘贴图片（先缩放，再粘贴）
+        for i, img_path in enumerate(image_files):
+            with Image.open(img_path) as img:
+                # 先缩放单张图片
+                scaled_img = img.resize(
+                    (scaled_img_width, scaled_img_height), Image.Resampling.LANCZOS
+                )
+
+                # 计算位置
+                row = i // cols
+                col = i % cols
+                x = scaled_spacing + (col * (scaled_img_width + scaled_spacing))
+                y = scaled_spacing + (row * (scaled_img_height + scaled_spacing))
+                combined_img.paste(scaled_img, (x, y))
 
         combined_img.save(output_path, format="PNG", optimize=True)
 

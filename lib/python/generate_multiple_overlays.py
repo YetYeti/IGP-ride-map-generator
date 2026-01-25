@@ -83,33 +83,22 @@ def extract_gps_data(fit_file_path: str) -> List[Tuple[float, float]]:
 def generate_overlay_map(
     all_gps_data: List[List[Tuple[float, float]]], output_path: str, map_style: str
 ) -> bool:
-    """生成叠加轨迹图"""
+    """生成叠加轨迹图（优化版：单遍遍历，减少内存占用）"""
     if not all_gps_data:
         return False
 
     try:
-        # 收集所有经纬度
-        all_lats = []
-        all_longs = []
+        # 初始化边界值追踪
+        lat_min = float("inf")
+        lat_max = float("-inf")
+        long_min = float("inf")
+        long_max = float("-inf")
 
-        for gps_data in all_gps_data:
-            if not gps_data:
-                continue
-            lats = [point[0] for point in gps_data]
-            longs = [point[1] for point in gps_data]
-            all_lats.extend(lats)
-            all_longs.extend(longs)
+        total_tracks = 0
 
-        if not all_lats or not all_longs:
-            return False
-
-        # 计算中心点
-        lat_center = (min(all_lats) + max(all_lats)) / 2
-        long_center = (min(all_longs) + max(all_longs)) / 2
-
-        # 创建地图（不使用 tiles 参数）
+        # 创建地图对象（初始位置，稍后会更新中心点）
         m = folium.Map(
-            location=[lat_center, long_center],
+            location=[0, 0],
             zoom_start=12,
             tiles=None,  # 不使用默认瓦片
         )
@@ -120,13 +109,20 @@ def generate_overlay_map(
         else:
             MAP_TILES["default"](m)
 
-        # 添加所有轨迹
+        # 单遍遍历：更新边界值 + 添加轨迹（避免累积 all_lats/all_longs）
         for gps_data in all_gps_data:
             if not gps_data:
                 continue
 
-            coords = [[point[0], point[1]] for point in gps_data]
+            # 更新边界值
+            for lat, long in gps_data:
+                lat_min = min(lat_min, lat)
+                lat_max = max(lat_max, lat)
+                long_min = min(long_min, long)
+                long_max = max(long_max, long)
 
+            # 添加轨迹到地图
+            coords = [[point[0], point[1]] for point in gps_data]
             folium.PolyLine(
                 coords,
                 color=TRACK_COLOR,
@@ -135,6 +131,17 @@ def generate_overlay_map(
                 line_cap="round",
                 line_join="round",
             ).add_to(m)
+
+            total_tracks += 1
+            if total_tracks % 50 == 0:
+                print_progress(f"已处理 {total_tracks}/{len(all_gps_data)} 条轨迹...")
+
+        # 计算中心点
+        lat_center = (lat_min + lat_max) / 2
+        long_center = (long_min + long_max) / 2
+
+        # 更新地图中心点
+        m.location = [lat_center, long_center]
 
         # 保存HTML文件
         m.save(output_path)

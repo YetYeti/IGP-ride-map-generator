@@ -92,10 +92,15 @@ export default function Home() {
         setLogs(task.logs)
       }
       
+      // 更新进度和结果（支持渐进式显示）
+      if (task.result) {
+        console.log('=== Updating result ===')
+        setResult(task.result)
+      }
+
       if (task.status === 'completed') {
         console.log('=== Task completed ===')
         console.log('Result:', task.result)
-        setResult(task.result)
         setLoading(false)
       } else if (task.status === 'failed') {
         console.log('=== Task failed ===')

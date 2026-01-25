@@ -292,12 +292,15 @@ async function processTask(
             })
             console.log('Combined map generated successfully')
             addLog(taskId, `轨迹合成图已生成: ${combinedMapFilename} (${pythonResult.total_tracks} 个轨迹，${pythonResult.grid_size})`, 'success')
+
+            // 立即更新任务状态，让前端可以看到轨迹合成图结果
+            updateTask(taskId, { result, progress: 85 })
           } else {
             addLog(taskId, `生成轨迹合成图失败: ${pythonResult.error}`, 'error')
           }
+        } else {
+          updateTask(taskId, { progress: 85 })
         }
-
-        updateTask(taskId, { progress: 85 })
       } catch (error: any) {
         console.error('Python execution error:', error)
         addLog(taskId, `生成轨迹合成图失败: ${error.message}`, 'error')
@@ -342,18 +345,21 @@ async function processTask(
             })
             console.log(`Overlay map generated for ${overlayMapStyle}: ${overlayFilename}`)
             addLog(taskId, `轨迹叠加网页已生成: ${overlayFilename} (${pythonResult.total_tracks} 个轨迹)`, 'success')
+
+            // 立即更新任务状态，让前端可以看到轨迹叠加网页结果
+            updateTask(taskId, { result, progress: 95 })
           } else {
             addLog(taskId, `生成轨迹叠加网页失败: ${pythonResult.error}`, 'error')
           }
         }
+
+        updateTask(taskId, { progress: 95 })
+
+        cleanupFitFiles(tempDir, processedActivities)
       } catch (error: any) {
         console.error('Python execution error:', error)
         addLog(taskId, `生成轨迹叠加网页失败: ${error.message}`, 'error')
       }
-
-      updateTask(taskId, { progress: 95 })
-
-      cleanupFitFiles(tempDir, processedActivities)
     }
 
     addLog(taskId, '生成完成！', 'success')
