@@ -170,7 +170,8 @@ async function processTask(
   overlayMapStyle: string,
   generateCombinedMap: boolean,
   generateOverlayMaps: boolean,
-  combinedMapSettings: CombinedMapSettings
+  combinedMapSettings: CombinedMapSettings,
+  selectedYear: number | 'all'
 ) {
   try {
     console.log('=== Starting processTask for:', taskId, '===')
@@ -187,8 +188,25 @@ async function processTask(
     })
 
     const outdoorActivities = activities.filter((a) => a.Title !== '室内骑行')
-    outdoorActivities.sort((a, b) => a.RideId - b.RideId)
-    addLog(taskId, `找到 ${outdoorActivities.length} 个户外骑行`, 'info')
+
+    let filteredActivities = outdoorActivities
+    if (selectedYear !== 'all') {
+      filteredActivities = outdoorActivities.filter(
+        (a) => a.start_time.getFullYear() === selectedYear
+      )
+
+      if (filteredActivities.length === 0) {
+        addLog(taskId, `${selectedYear} 年没有户外骑行数据`, 'error')
+        updateTask(taskId, {
+          status: 'failed',
+          error: `${selectedYear} 年没有户外骑行数据，请选择其他年份或"全部年份"`,
+        })
+        return
+      }
+    }
+
+    filteredActivities.sort((a, b) => a.RideId - b.RideId)
+    addLog(taskId, `找到 ${filteredActivities.length} 个户外骑行`, 'info')
 
     updateTask(taskId, { progress: 30 })
 
@@ -202,10 +220,10 @@ async function processTask(
     const processedActivities: any[] = []
 
     const BATCH_SIZE = 5
-    for (let batchStart = 0; batchStart < outdoorActivities.length; batchStart += BATCH_SIZE) {
-      const batch = outdoorActivities.slice(batchStart, batchStart + BATCH_SIZE)
+    for (let batchStart = 0; batchStart < filteredActivities.length; batchStart += BATCH_SIZE) {
+      const batch = filteredActivities.slice(batchStart, batchStart + BATCH_SIZE)
       const batchIndex = Math.floor(batchStart / BATCH_SIZE) + 1
-      const totalBatches = Math.ceil(outdoorActivities.length / BATCH_SIZE)
+      const totalBatches = Math.ceil(filteredActivities.length / BATCH_SIZE)
 
       addLog(taskId, `正在处理第 ${batchIndex}/${totalBatches} 批次（${batch.length} 个活动）...`, 'info')
 
@@ -230,7 +248,7 @@ async function processTask(
       const successfulInBatch = batchResults.filter(r => r.success).map(r => r.activity)
       processedActivities.push(...successfulInBatch)
 
-      const progress = 30 + (processedActivities.length / outdoorActivities.length) * 40
+      const progress = 30 + (processedActivities.length / filteredActivities.length) * 40
       updateTask(taskId, { progress })
     }
 
@@ -242,6 +260,7 @@ async function processTask(
       success: true,
       totalActivities: activities.length,
       outdoorActivities: outdoorActivities.length,
+      filteredActivities: filteredActivities.length,
       processedActivities: processedActivities.length,
       combinedMaps: [],
       overlayMaps: [],
@@ -387,13 +406,15 @@ export async function POST(req: NextRequest) {
         trackSpacing: 300,
         columns: 6,
         trackPadding: 0.1,
-      }
+      },
+      selectedYear = 'all',
     } = body
 
     console.log('Overlay map style:', overlayMapStyle)
     console.log('Generate combined map:', generateCombinedMap)
     console.log('Generate overlay maps:', generateOverlayMaps)
     console.log('Combined map settings:', combinedMapSettings)
+    console.log('Selected year:', selectedYear)
 
     if (!username || !password) {
       return NextResponse.json(
@@ -426,7 +447,8 @@ export async function POST(req: NextRequest) {
       overlayMapStyle,
       generateCombinedMap,
       generateOverlayMaps,
-      combinedMapSettings
+      combinedMapSettings,
+      selectedYear
     ).catch((error) => {
       console.error('Process task error:', error)
       addLog(taskId, `处理失败: ${error.message}`, 'error')

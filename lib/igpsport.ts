@@ -114,6 +114,17 @@ export class IGPSPORTClient {
     return headers
   }
 
+  private parseActivityDate(data: Record<string, unknown>): Date {
+    const dateFields = ['StartTime', 'start_time', 'BeginTime', 'beginTime', 'Date', 'date']
+    for (const field of dateFields) {
+      const value = data[field]
+      if (typeof value === 'string' || typeof value === 'number') {
+        return new Date(value)
+      }
+    }
+    return new Date()
+  }
+
 
   async getActivities(
     pageIndex: number = 1,
@@ -157,6 +168,11 @@ export class IGPSPORTClient {
       const activitiesData = result.item || []
       console.log('Activities data length:', activitiesData.length)
 
+      if (activitiesData.length > 0) {
+        console.log('First activity keys:', Object.keys(activitiesData[0]))
+        console.log('First activity sample:', JSON.stringify(activitiesData[0], null, 2))
+      }
+
       const activities: Activity[] = activitiesData.map(
         (data: any) =>
           ({
@@ -165,7 +181,7 @@ export class IGPSPORTClient {
             Title: data.Title,
             sport: 'None',
             sub_sport: 'None',
-            start_time: new Date(),
+            start_time: this.parseActivityDate(data),
             total_ascent: 0,
             total_descent: 0,
             total_calories: 0,
