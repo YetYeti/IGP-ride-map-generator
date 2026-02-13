@@ -23,6 +23,10 @@ next-env.d.ts
 .DS_Store
 *.pem
 
+# AI coding agents
+AGENTS.md
+/conversations/
+
 # debug
 npm-debug.log*
 yarn-debug.log*
