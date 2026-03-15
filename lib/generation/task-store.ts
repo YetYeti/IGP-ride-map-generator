@@ -1,8 +1,10 @@
 import { v4 as uuidv4 } from 'uuid'
 import {
+  EMPTY_OUTPUT_PROGRESS,
   EMPTY_GENERATION_TASK_STATS,
   type GenerationArtifact,
   type GenerationLogLevel,
+  type GenerationOutputStatus,
   type GenerationTask,
   type GenerationTaskStats,
 } from '@/lib/generation/types'
@@ -28,6 +30,10 @@ export function createTask(): GenerationTask {
     logs: [],
     artifacts: [],
     stats: { ...EMPTY_GENERATION_TASK_STATS },
+    outputsProgress: {
+      combinedMap: { ...EMPTY_OUTPUT_PROGRESS },
+      overlayMap: { ...EMPTY_OUTPUT_PROGRESS },
+    },
     error: null,
   }
 
@@ -123,6 +129,61 @@ export function addTaskArtifact(
         createdAt: artifact.createdAt ?? new Date().toISOString(),
       },
     ],
+  }))
+}
+
+export function configureTaskOutputs(
+  taskId: string,
+  outputs: {
+    combinedMap: boolean
+    overlayMap: boolean
+  }
+): GenerationTask | null {
+  return mutateTask(taskId, (task) => ({
+    ...task,
+    outputsProgress: {
+      combinedMap: outputs.combinedMap
+        ? {
+            enabled: true,
+            status: 'pending',
+            progress: 0,
+          }
+        : {
+            ...EMPTY_OUTPUT_PROGRESS,
+          },
+      overlayMap: outputs.overlayMap
+        ? {
+            enabled: true,
+            status: 'pending',
+            progress: 0,
+          }
+        : {
+            ...EMPTY_OUTPUT_PROGRESS,
+          },
+    },
+  }))
+}
+
+export function updateTaskOutputProgress(
+  taskId: string,
+  output: 'combinedMap' | 'overlayMap',
+  updates: {
+    status?: GenerationOutputStatus
+    progress?: number
+  }
+): GenerationTask | null {
+  return mutateTask(taskId, (task) => ({
+    ...task,
+    outputsProgress: {
+      ...task.outputsProgress,
+      [output]: {
+        ...task.outputsProgress[output],
+        ...('status' in updates && updates.status !== undefined ? { status: updates.status } : {}),
+        ...('progress' in updates && updates.progress !== undefined
+          ? { progress: Math.max(0, Math.min(100, Math.round(updates.progress))) }
+          : {}),
+      },
+    },
   }))
 }
 

@@ -15,13 +15,13 @@ export function LogDisplay({ logs = [], id }: LogDisplayProps) {
   const getLevelColor = (level: GenerationLogEntry['level']) => {
     switch (level) {
       case 'error':
-        return 'text-red-600'
+        return 'text-rose-300'
       case 'success':
-        return 'text-green-600'
+        return 'text-emerald-300'
       case 'warning':
-        return 'text-yellow-600'
+        return 'text-amber-200'
       default:
-        return 'text-gray-900'
+        return 'text-white/80'
     }
   }
 
@@ -33,22 +33,28 @@ export function LogDisplay({ logs = [], id }: LogDisplayProps) {
 
   return (
     <Card id={id} className="overflow-hidden">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg">处理日志</CardTitle>
+      <CardHeader className="border-b border-white/10 bg-[#1f2229] pb-4">
+        <span className="eyebrow !text-white/60">运行日志</span>
+        <CardTitle className="text-[1.4rem] text-white">处理日志</CardTitle>
       </CardHeader>
-      <CardContent className="p-0">
-        <div ref={logContainerRef} className="h-96 overflow-y-auto custom-scrollbar bg-gray-50 p-4 space-y-1">
+      <CardContent className="bg-[#1f2229] p-0">
+        <div
+          ref={logContainerRef}
+          className="custom-scrollbar h-[24rem] overflow-y-auto bg-[linear-gradient(180deg,#1f2229_0%,#171a20_100%)] p-5"
+        >
           {logs.length === 0 ? (
-            <p className="text-sm text-gray-500 text-center py-8">
+            <p className="py-12 text-center text-sm text-white/45">
               暂无日志
             </p>
            ) : (
-            logs.map((log, index) => (
-              <div key={index} className="text-sm font-mono break-words">
-                <span className="text-gray-500">[{log.timestamp}]</span>{' '}
-                <span className={getLevelColor(log.level)}>{log.message}</span>
-              </div>
-            ))
+            <div className="space-y-2">
+              {logs.map((log, index) => (
+                <div key={index} className="break-words rounded-2xl border border-white/6 bg-white/4 px-4 py-3 text-sm font-mono">
+                  <span className="text-white/35">[{log.timestamp}]</span>{' '}
+                  <span className={getLevelColor(log.level)}>{log.message}</span>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       </CardContent>

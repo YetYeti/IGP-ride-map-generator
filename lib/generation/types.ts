@@ -19,6 +19,19 @@ export interface GenerationTaskStats {
   processedActivities: number
 }
 
+export type GenerationOutputStatus = 'idle' | 'pending' | 'running' | 'completed' | 'failed'
+
+export interface GenerationOutputProgress {
+  enabled: boolean
+  status: GenerationOutputStatus
+  progress: number
+}
+
+export interface GenerationTaskOutputsProgress {
+  combinedMap: GenerationOutputProgress
+  overlayMap: GenerationOutputProgress
+}
+
 export interface CombinedMapOutputConfig {
   enabled: boolean
   layoutPreset: CombinedMapLayoutPreset
@@ -67,6 +80,7 @@ export interface GenerationTask {
   logs: GenerationLogEntry[]
   artifacts: GenerationArtifact[]
   stats: GenerationTaskStats
+  outputsProgress: GenerationTaskOutputsProgress
   error: string | null
 }
 
@@ -79,4 +93,10 @@ export const EMPTY_GENERATION_TASK_STATS: GenerationTaskStats = {
   outdoorActivities: 0,
   filteredActivities: 0,
   processedActivities: 0,
+}
+
+export const EMPTY_OUTPUT_PROGRESS: GenerationOutputProgress = {
+  enabled: false,
+  status: 'idle',
+  progress: 0,
 }

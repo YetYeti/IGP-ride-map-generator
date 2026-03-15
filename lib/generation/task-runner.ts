@@ -4,9 +4,11 @@ import { IGPSPORTClient, type Activity } from '@/lib/igpsport'
 import {
   addTaskArtifact,
   appendTaskLog,
+  configureTaskOutputs,
   getTask,
   setTaskCompleted,
   setTaskFailed,
+  updateTaskOutputProgress,
   setTaskProgress,
   setTaskRunning,
   updateTaskStats,
@@ -42,7 +44,12 @@ async function runTask(taskId: string, request: GenerationTaskRequest) {
   const requestedArtifactCount = getRequestedArtifactCount(request)
 
   setTaskRunning(taskId)
+  configureTaskOutputs(taskId, {
+    combinedMap: request.outputs.combinedMap.enabled,
+    overlayMap: request.outputs.overlayMap.enabled,
+  })
   appendTaskLog(taskId, '开始生成轨迹...', 'info')
+  updateRequestedOutputsProgress(taskId, request, 5, 'pending')
 
   try {
     cleanupExpiredFiles()
@@ -51,10 +58,12 @@ async function runTask(taskId: string, request: GenerationTaskRequest) {
     await client.login(request.credentials.username, request.credentials.password)
     appendTaskLog(taskId, '登录成功', 'success')
     setTaskProgress(taskId, 10)
+    updateRequestedOutputsProgress(taskId, request, 12, 'pending')
 
     const activities = await client.getAllActivities((page) => {
       appendTaskLog(taskId, `正在获取第 ${page} 页活动...`, 'info')
       setTaskProgress(taskId, Math.min(25, 10 + page * 2))
+      updateRequestedOutputsProgress(taskId, request, Math.min(24, 12 + page * 2), 'pending')
     })
 
     const outdoorActivities = activities.filter((activity) => activity.Title !== '室内骑行')
@@ -77,8 +86,9 @@ async function runTask(taskId: string, request: GenerationTaskRequest) {
     filteredActivities.sort((left, right) => left.RideId - right.RideId)
     appendTaskLog(taskId, `找到 ${filteredActivities.length} 个户外骑行`, 'info')
     setTaskProgress(taskId, 30)
+    updateRequestedOutputsProgress(taskId, request, 30, 'pending')
 
-    await downloadFitFiles(taskId, client, filteredActivities, tempDir, processedActivities)
+    await downloadFitFiles(taskId, client, filteredActivities, tempDir, processedActivities, request)
 
     updateTaskStats(taskId, {
       processedActivities: processedActivities.length,
@@ -86,10 +96,12 @@ async function runTask(taskId: string, request: GenerationTaskRequest) {
 
     appendTaskLog(taskId, `成功处理 ${processedActivities.length} 个活动`, 'success')
     setTaskProgress(taskId, 70)
+    updateRequestedOutputsProgress(taskId, request, 58, 'pending')
 
     if (processedActivities.length === 0 && requestedArtifactCount > 0) {
       const errorMessage = '没有可用于生成轨迹图的 FIT 文件'
       appendTaskLog(taskId, errorMessage, 'error')
+      markRequestedOutputsFailed(taskId, request, 58)
       setTaskFailed(taskId, errorMessage)
       return
     }
@@ -107,6 +119,7 @@ async function runTask(taskId: string, request: GenerationTaskRequest) {
       if (!task || task.artifacts.length === 0) {
         const errorMessage = '未成功生成任何产物文件'
         appendTaskLog(taskId, errorMessage, 'error')
+        markRequestedOutputsFailed(taskId, request, 90)
         setTaskFailed(taskId, errorMessage)
         return
       }
@@ -124,7 +137,8 @@ async function downloadFitFiles(
   client: IGPSPORTClient,
   activities: Activity[],
   tempDir: string,
-  processedActivities: Activity[]
+  processedActivities: Activity[],
+  request: GenerationTaskRequest
 ) {
   for (let batchStart = 0; batchStart < activities.length; batchStart += BATCH_SIZE) {
     const batch = activities.slice(batchStart, batchStart + BATCH_SIZE)
@@ -157,6 +171,12 @@ async function downloadFitFiles(
 
     const progress = 30 + (processedActivities.length / activities.length) * 40
     setTaskProgress(taskId, progress)
+    updateRequestedOutputsProgress(
+      taskId,
+      request,
+      30 + (processedActivities.length / activities.length) * 28,
+      'pending'
+    )
   }
 }
 
@@ -167,6 +187,10 @@ async function generateCombinedMap(
   tempDir: string
 ) {
   appendTaskLog(taskId, '正在生成轨迹合成图...', 'info')
+  updateTaskOutputProgress(taskId, 'combinedMap', {
+    status: 'running',
+    progress: 72,
+  })
 
   const scriptPath = path.join(process.cwd(), 'lib/python/generate_combined_map.py')
   const filename = `combined_map_${taskId}.png`
@@ -194,6 +218,10 @@ async function generateCombinedMap(
 
     if (!pythonResult.success) {
       appendTaskLog(taskId, `生成轨迹合成图失败: ${pythonResult.error}`, 'error')
+      updateTaskOutputProgress(taskId, 'combinedMap', {
+        status: 'failed',
+        progress: 72,
+      })
       return
     }
 
@@ -209,9 +237,17 @@ async function generateCombinedMap(
       `轨迹合成图已生成: ${filename} (${pythonResult.totalTracks ?? processedActivities.length} 个轨迹${pythonResult.gridSize ? `，${pythonResult.gridSize}` : ''})`,
       'success'
     )
+    updateTaskOutputProgress(taskId, 'combinedMap', {
+      status: 'completed',
+      progress: 100,
+    })
     setTaskProgress(taskId, 85)
   } catch (error: unknown) {
     appendTaskLog(taskId, `生成轨迹合成图失败: ${getErrorMessage(error)}`, 'error')
+    updateTaskOutputProgress(taskId, 'combinedMap', {
+      status: 'failed',
+      progress: 72,
+    })
   }
 }
 
@@ -222,6 +258,10 @@ async function generateOverlayMap(
   tempDir: string
 ) {
   appendTaskLog(taskId, '正在生成轨迹叠加网页...', 'info')
+  updateTaskOutputProgress(taskId, 'overlayMap', {
+    status: 'running',
+    progress: 72,
+  })
 
   const scriptPath = path.join(process.cwd(), 'lib/python/generate_multiple_overlays.py')
   const filename = `overlay_${output.style}_${taskId}.html`
@@ -237,6 +277,10 @@ async function generateOverlayMap(
 
     if (!pythonResult.success) {
       appendTaskLog(taskId, `生成轨迹叠加网页失败: ${pythonResult.error}`, 'error')
+      updateTaskOutputProgress(taskId, 'overlayMap', {
+        status: 'failed',
+        progress: 72,
+      })
       return
     }
 
@@ -253,9 +297,52 @@ async function generateOverlayMap(
       `轨迹叠加网页已生成: ${filename} (${pythonResult.totalTracks ?? processedActivities.length} 个轨迹)`,
       'success'
     )
+    updateTaskOutputProgress(taskId, 'overlayMap', {
+      status: 'completed',
+      progress: 100,
+    })
     setTaskProgress(taskId, 95)
   } catch (error: unknown) {
     appendTaskLog(taskId, `生成轨迹叠加网页失败: ${getErrorMessage(error)}`, 'error')
+    updateTaskOutputProgress(taskId, 'overlayMap', {
+      status: 'failed',
+      progress: 72,
+    })
+  }
+}
+
+function updateRequestedOutputsProgress(
+  taskId: string,
+  request: GenerationTaskRequest,
+  progress: number,
+  status: 'pending' | 'running'
+) {
+  if (request.outputs.combinedMap.enabled) {
+    updateTaskOutputProgress(taskId, 'combinedMap', { progress, status })
+  }
+
+  if (request.outputs.overlayMap.enabled) {
+    updateTaskOutputProgress(taskId, 'overlayMap', { progress, status })
+  }
+}
+
+function markRequestedOutputsFailed(
+  taskId: string,
+  request: GenerationTaskRequest,
+  progress: number
+) {
+  if (request.outputs.combinedMap.enabled) {
+    updateTaskOutputProgress(taskId, 'combinedMap', {
+      status: 'failed',
+      progress,
+    })
+  }
+
+  if (request.outputs.overlayMap.enabled) {
+    updateTaskOutputProgress(taskId, 'overlayMap', {
+      status: 'failed',
+      progress,
+    })
   }
 }
 

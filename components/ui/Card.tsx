@@ -10,7 +10,7 @@ export function Card({ children, className = '', id }: CardProps) {
   return (
     <div
       id={id}
-      className={`rounded-lg border border-gray-200 bg-white text-gray-950 shadow-sm ${className}`}
+      className={`panel-surface rounded-[28px] text-[color:var(--foreground)] ${className}`}
     >
       {children}
     </div>
@@ -18,17 +18,17 @@ export function Card({ children, className = '', id }: CardProps) {
 }
 
 export function CardHeader({ children, className = '' }: CardProps) {
-  return <div className={`flex flex-col space-y-1.5 p-6 ${className}`}>{children}</div>
+  return <div className={`flex flex-col space-y-2 p-7 ${className}`}>{children}</div>
 }
 
 export function CardTitle({ children, className = '' }: CardProps) {
   return (
-    <h3 className={`text-2xl font-semibold leading-none tracking-tight ${className}`}>
+    <h3 className={`font-display text-[1.7rem] font-semibold leading-none text-[color:var(--foreground)] ${className}`}>
       {children}
     </h3>
   )
 }
 
 export function CardContent({ children, className = '' }: CardProps) {
-  return <div className={`p-6 pt-0 ${className}`}>{children}</div>
+  return <div className={`p-7 pt-0 ${className}`}>{children}</div>
 }
