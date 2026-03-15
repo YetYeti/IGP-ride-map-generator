@@ -108,16 +108,14 @@ export default function Home() {
         <section className="grid gap-6 pb-8">
           <div className="space-y-5">
             <span className="eyebrow">IGPSPORT / Ride Composer</span>
-            <div className="space-y-4">
-              <h1 className="font-display max-w-4xl text-5xl leading-[0.94] text-[color:var(--foreground)] sm:text-6xl lg:text-7xl">
-                把每一次骑行
-                <br />
-                编排成一张
-                <span className="text-[color:var(--primary)]"> 可展示的轨迹作品</span>
+            <div className="space-y-2">
+              <h1 className="font-display text-[clamp(3.4rem,6vw,4.6rem)] leading-[0.96] tracking-[-0.03em] text-[color:var(--foreground)]">
+                <span className="block lg:whitespace-nowrap">
+                  <span>把每一次骑行</span>
+                  <span className="ml-[0.18em]">编排成一张</span>
+                  <span className="ml-[0.18em] text-[color:var(--primary)]">可展示的轨迹作品</span>
+                </span>
               </h1>
-              <p className="max-w-2xl text-base text-[color:var(--muted-foreground)] sm:text-lg">
-                输入 IGPSPORT 账号，自动抓取户外骑行记录，生成带有节奏感的合成图与叠加地图网页。
-              </p>
             </div>
           </div>
         </section>
