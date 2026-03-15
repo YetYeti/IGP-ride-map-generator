@@ -1,31 +1,25 @@
 'use client'
 
 import React from 'react'
-import { Card, CardHeader, CardTitle, CardContent } from './ui/Card'
-import { Button } from './ui/Button'
-import { MapStyle, MapStyleLabels } from '../lib/map-styles'
-
-export interface Result {
-  filename: string
-  url: string
-  style?: MapStyle
-}
-
-export interface GenerationResult {
-  success: boolean
-  totalActivities: number
-  outdoorActivities: number
-  processedActivities: number
-  combinedMaps: Result[]
-  overlayMaps: Result[]
-}
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
+import { Button } from '@/components/ui/Button'
+import { MapStyleLabels } from '@/lib/map-styles'
+import type { GenerationTask } from '@/lib/generation/types'
 
 interface ResultPreviewProps {
-  result: GenerationResult | null
+  task: GenerationTask | null
 }
 
-export function ResultPreview({ result }: ResultPreviewProps) {
+export function ResultPreview({ task }: ResultPreviewProps) {
   const [previewImages, setPreviewImages] = React.useState<Record<string, boolean>>({})
+  const combinedMaps = React.useMemo(
+    () => task?.artifacts.filter((artifact) => artifact.kind === 'combined-map') ?? [],
+    [task]
+  )
+  const overlayMaps = React.useMemo(
+    () => task?.artifacts.filter((artifact) => artifact.kind === 'overlay-map') ?? [],
+    [task]
+  )
 
   const downloadFile = async (url: string, filename: string) => {
     try {
@@ -69,33 +63,38 @@ export function ResultPreview({ result }: ResultPreviewProps) {
   }
 
   React.useEffect(() => {
-    if (result && result.success) {
-      console.log('ResultPreview received result:', result)
-      console.log('Combined maps:', result.combinedMaps)
-      console.log('Overlay maps:', result.overlayMaps)
-
-      if (result.combinedMaps.length > 0) {
-        result.combinedMaps.forEach(map => {
-          console.log('Loading image:', map.url)
-          loadImage(map.url)
-        })
-      }
+    if (combinedMaps.length > 0) {
+      combinedMaps.forEach((map) => {
+        loadImage(map.url)
+      })
     }
-  }, [result])
+  }, [combinedMaps])
 
-  if (!result || !result.success) {
+  if (!task || task.artifacts.length === 0) {
     return null
   }
 
   return (
     <div className="space-y-4">
-      {result.combinedMaps.length > 0 && (
+      <Card>
+        <CardHeader>
+          <CardTitle>任务概览</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-2 gap-3 text-sm text-gray-700">
+          <div>全部活动：{task.stats.totalActivities}</div>
+          <div>户外骑行：{task.stats.outdoorActivities}</div>
+          <div>筛选后活动：{task.stats.filteredActivities}</div>
+          <div>成功处理：{task.stats.processedActivities}</div>
+        </CardContent>
+      </Card>
+
+      {combinedMaps.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>轨迹合成图</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {result.combinedMaps.map((item, index) => (
+            {combinedMaps.map((item, index) => (
               <div key={index} className="space-y-2">
                 <div className="relative bg-gray-100 rounded overflow-hidden">
                   {previewImages[item.url] ? (
@@ -127,13 +126,13 @@ export function ResultPreview({ result }: ResultPreviewProps) {
         </Card>
       )}
 
-      {result.overlayMaps.length > 0 && (
+      {overlayMaps.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>轨迹叠加网页</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {result.overlayMaps.map((item, index) => (
+            {overlayMaps.map((item, index) => (
               <div key={index} className="space-y-2">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">

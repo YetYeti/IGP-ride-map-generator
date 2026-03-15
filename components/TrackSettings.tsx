@@ -1,18 +1,14 @@
 'use client'
 
 import React from 'react'
-import { Button } from './ui/Button'
-import { MapStyle, MapStyleLabels } from '../lib/map-styles'
+import { MapStyleLabels } from '@/lib/map-styles'
+import type {
+  CombinedMapLayoutPreset,
+  CombinedMapOutputConfig,
+  OverlayMapOutputConfig,
+} from '@/lib/generation/types'
 
-type LayoutPreset = 'compact' | 'standard' | 'loose' | 'custom'
-
-interface CombinedMapSettings {
-  layoutPreset: LayoutPreset
-  trackWidth: number
-  trackSpacing: number
-  columns: number
-  trackPadding: number
-}
+type CombinedMapSettingField = 'trackWidth' | 'trackSpacing' | 'columns' | 'trackPadding'
 
 const LAYOUT_PRESETS = {
   compact: {
@@ -52,14 +48,10 @@ const LAYOUT_PRESETS = {
 }
 
 interface TrackSettingsProps {
-  overlayMapStyle: MapStyle
-  generateCombinedMap: boolean
-  generateOverlayMaps: boolean
-  combinedMapSettings: CombinedMapSettings
-  onSelectMapStyle: (style: MapStyle) => void
-  onToggleCombinedMap: () => void
-  onToggleOverlayMaps: () => void
-  onCombinedMapSettingsChange: (settings: CombinedMapSettings) => void
+  combinedMap: CombinedMapOutputConfig
+  overlayMap: OverlayMapOutputConfig
+  onCombinedMapChange: (settings: CombinedMapOutputConfig) => void
+  onOverlayMapChange: (settings: OverlayMapOutputConfig) => void
 }
 
 interface NumberInputProps {
@@ -152,32 +144,29 @@ function NumberInput({ label, value, min, max, step = 1, disabled = false, onCha
 }
 
 export function TrackSettings({
-  overlayMapStyle,
-  generateCombinedMap,
-  generateOverlayMaps,
-  combinedMapSettings,
-  onSelectMapStyle,
-  onToggleCombinedMap,
-  onToggleOverlayMaps,
-  onCombinedMapSettingsChange,
+  combinedMap,
+  overlayMap,
+  onCombinedMapChange,
+  onOverlayMapChange,
 }: TrackSettingsProps) {
-  const handleCombinedMapSettingsChange = (field: keyof CombinedMapSettings, value: number) => {
-    onCombinedMapSettingsChange({
-      ...combinedMapSettings,
+  const handleCombinedMapSettingsChange = (field: CombinedMapSettingField, value: number) => {
+    onCombinedMapChange({
+      ...combinedMap,
       [field]: value,
     })
   }
 
-  const handleLayoutPresetChange = (preset: LayoutPreset) => {
+  const handleLayoutPresetChange = (preset: CombinedMapLayoutPreset) => {
     if (preset === 'custom') {
-      onCombinedMapSettingsChange({
-        ...combinedMapSettings,
+      onCombinedMapChange({
+        ...combinedMap,
         layoutPreset: 'custom',
       })
     } else {
       const presetConfig = LAYOUT_PRESETS[preset]
       if (presetConfig && 'settings' in presetConfig) {
-        onCombinedMapSettingsChange({
+        onCombinedMapChange({
+          ...combinedMap,
           layoutPreset: preset,
           ...presetConfig.settings,
         })
@@ -193,8 +182,13 @@ export function TrackSettings({
           <label className="flex items-center space-x-2 cursor-pointer">
             <input
               type="checkbox"
-              checked={generateCombinedMap}
-              onChange={onToggleCombinedMap}
+              checked={combinedMap.enabled}
+              onChange={() =>
+                onCombinedMapChange({
+                  ...combinedMap,
+                  enabled: !combinedMap.enabled,
+                })
+              }
               className="w-4 h-4"
             />
             <span className="text-sm">生成轨迹合成图</span>
@@ -203,8 +197,13 @@ export function TrackSettings({
           <label className="flex items-center space-x-2 cursor-pointer">
             <input
               type="checkbox"
-              checked={generateOverlayMaps}
-              onChange={onToggleOverlayMaps}
+              checked={overlayMap.enabled}
+              onChange={() =>
+                onOverlayMapChange({
+                  ...overlayMap,
+                  enabled: !overlayMap.enabled,
+                })
+              }
               className="w-4 h-4"
             />
             <span className="text-sm">生成轨迹叠加网页</span>
@@ -212,18 +211,21 @@ export function TrackSettings({
         </div>
       </div>
 
-      {generateCombinedMap && (
+      {combinedMap.enabled && (
         <div className="border rounded-lg p-4">
           <h3 className="text-sm font-semibold mb-4">轨迹合成图设置</h3>
           <div className="space-y-4">
             <div>
               <label className="text-sm text-gray-600 block mb-2">布局预设</label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {(Object.entries(LAYOUT_PRESETS) as [LayoutPreset, typeof LAYOUT_PRESETS[LayoutPreset]][]).map(([key, config]) => (
+                {(Object.entries(LAYOUT_PRESETS) as [
+                  CombinedMapLayoutPreset,
+                  (typeof LAYOUT_PRESETS)[CombinedMapLayoutPreset],
+                ][]).map(([key, config]) => (
                   <label
                     key={key}
                     className={`flex items-start space-x-2 cursor-pointer p-3 rounded-md border-2 transition-colors ${
-                      combinedMapSettings.layoutPreset === key
+                      combinedMap.layoutPreset === key
                         ? 'border-blue-500 bg-blue-50'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
@@ -231,7 +233,7 @@ export function TrackSettings({
                     <input
                       type="radio"
                       name="layoutPreset"
-                      checked={combinedMapSettings.layoutPreset === key}
+                      checked={combinedMap.layoutPreset === key}
                       onChange={() => handleLayoutPresetChange(key)}
                       className="w-4 h-4 mt-0.5"
                     />
@@ -244,13 +246,13 @@ export function TrackSettings({
               </div>
             </div>
 
-            {combinedMapSettings.layoutPreset === 'custom' && (
+            {combinedMap.layoutPreset === 'custom' && (
               <div className="border-t pt-4">
                 <div className="text-sm font-medium mb-3 text-gray-700">自定义参数</div>
                 <div className="space-y-3">
                   <NumberInput
                     label="轨迹线条粗细"
-                    value={combinedMapSettings.trackWidth}
+                    value={combinedMap.trackWidth}
                     min={1}
                     max={10}
                     step={1}
@@ -258,7 +260,7 @@ export function TrackSettings({
                   />
                   <NumberInput
                     label="小图之间间隔（像素）"
-                    value={combinedMapSettings.trackSpacing}
+                    value={combinedMap.trackSpacing}
                     min={0}
                     max={1000}
                     step={10}
@@ -266,7 +268,7 @@ export function TrackSettings({
                   />
                   <NumberInput
                     label="每行小图数量"
-                    value={combinedMapSettings.columns}
+                    value={combinedMap.columns}
                     min={1}
                     max={10}
                     step={1}
@@ -274,7 +276,7 @@ export function TrackSettings({
                   />
                   <NumberInput
                     label="轨迹周围留白比例"
-                    value={combinedMapSettings.trackPadding}
+                    value={combinedMap.trackPadding}
                     min={0}
                     max={0.5}
                     step={0.05}
@@ -287,7 +289,7 @@ export function TrackSettings({
         </div>
       )}
 
-      {generateOverlayMaps && (
+      {overlayMap.enabled && (
         <div className="border rounded-lg p-4">
           <h3 className="text-sm font-semibold mb-3">地图样式（单选）</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -299,8 +301,13 @@ export function TrackSettings({
                 <input
                   type="radio"
                   name="mapStyle"
-                  checked={overlayMapStyle === key as MapStyle}
-                  onChange={() => onSelectMapStyle(key as MapStyle)}
+                  checked={overlayMap.style === key}
+                  onChange={() =>
+                    onOverlayMapChange({
+                      ...overlayMap,
+                      style: key as OverlayMapOutputConfig['style'],
+                    })
+                  }
                   className="w-4 h-4"
                 />
                 <span className="text-sm">{label}</span>

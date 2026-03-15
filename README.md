@@ -284,19 +284,21 @@ IGPSPORT_RIDE_MAP_VERCEL/
 │   ├── layout.tsx                  # 全局布局
 │   ├── globals.css                 # 全局样式
 │   └── api/
-│       ├── generate/route.ts        # 生成轨迹 API
-│       ├── status/[taskId]/route.ts # 任务状态查询
-│       ├── download/[taskId]/[filename]/route.ts # 文件下载
-│       └── health/route.ts        # 健康检查
+│       ├── tasks/route.ts          # 创建生成任务
+│       ├── tasks/[taskId]/route.ts # 查询任务状态
+│       ├── tasks/[taskId]/artifacts/[filename]/route.ts # 下载或预览产物
+│       └── health/route.ts         # 健康检查
 ├── components/
 │   ├── ui/                        # 基础 UI 组件
 │   ├── RideForm.tsx               # 骑行数据表单
 │   ├── TrackSettings.tsx          # 轨迹设置
 │   ├── LogDisplay.tsx             # 日志显示
-│   ├── ResultPreview.tsx          # 结果预览
-│   └── OverlayMap.tsx             # 叠加地图
+│   └── ResultPreview.tsx          # 结果预览
+├── hooks/
+│   └── useGenerationTask.ts       # 任务创建与轮询
 ├── lib/
 │   ├── igpsport.ts                # IGPSPORT API 客户端
+│   ├── generation/                # 任务模型与服务层
 │   ├── map-styles.ts              # 地图样式配置
 │   └── python/                    # Python 脚本
 │       ├── generate_combined_map.py    # 生成轨迹合成图

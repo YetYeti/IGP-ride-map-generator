@@ -3,118 +3,40 @@
 import React from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { RideForm } from '@/components/RideForm'
-import { LogDisplay, LogEntry } from '@/components/LogDisplay'
-import { ResultPreview, GenerationResult } from '@/components/ResultPreview'
-import { MapStyle } from '@/lib/map-styles'
-
-interface CombinedMapSettings {
-  layoutPreset: 'compact' | 'standard' | 'loose' | 'custom'
-  trackWidth: number
-  trackSpacing: number
-  columns: number
-  trackPadding: number
-}
-
-interface RideFormData {
-  username: string
-  password: string
-  overlayMapStyle: MapStyle
-  generateCombinedMap: boolean
-  generateOverlayMaps: boolean
-  combinedMapSettings: CombinedMapSettings
-}
+import { LogDisplay } from '@/components/LogDisplay'
+import { ResultPreview } from '@/components/ResultPreview'
+import { useGenerationTask } from '@/hooks/useGenerationTask'
+import type { GenerationLogEntry, GenerationTaskRequest } from '@/lib/generation/types'
 
 export default function Home() {
-  const [loading, setLoading] = React.useState(false)
-  const [taskId, setTaskId] = React.useState<string | null>(null)
-  const [logs, setLogs] = React.useState<LogEntry[]>([])
-  const [result, setResult] = React.useState<GenerationResult | null>(null)
+  const { task, error, loading, submitTask } = useGenerationTask()
 
-  const handleSubmit = async (data: RideFormData) => {
-    try {
-      console.log('=== Submitting form ===')
-      console.log('Overlay map style:', data.overlayMapStyle)
-      console.log('Generate combined map:', data.generateCombinedMap)
-      console.log('Generate overlay maps:', data.generateOverlayMaps)
-      console.log('Combined map settings:', data.combinedMapSettings)
+  const handleSubmit = async (data: GenerationTaskRequest) => {
+    await submitTask(data)
 
-      setLoading(true)
-      setLogs([])
-      setResult(null)
-
-      const response = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      })
-
-      const responseData = await response.json()
-
-      if (!response.ok) {
-        throw new Error(responseData.error || '生成失败')
-      }
-
-      setTaskId(responseData.taskId)
-      pollTaskStatus(responseData.taskId)
-
-      // 滚动到日志区域
-      const logDisplayElement = document.getElementById('log-display')
-      if (logDisplayElement) {
-        logDisplayElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      }
-    } catch (error: any) {
-      console.error('Submit error:', error)
-      const timestamp = new Date().toLocaleTimeString('zh-CN')
-      setLogs([{ timestamp, message: error.message, level: 'error' }])
-      setLoading(false)
+    const logDisplayElement = document.getElementById('log-display')
+    if (logDisplayElement) {
+      logDisplayElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
   }
 
-  const pollTaskStatus = async (id: string) => {
-    console.log('=== Starting to poll task status ===')
-    console.log('Task ID:', id)
-    
-    try {
-      const response = await fetch(`/api/status/${id}`)
-      // 检查是否 404（任务不存在或已过期）
-      if (response.status === 404) {
-        console.log('=== Task not found or expired ===')
-        setLoading(false)
-        return
-      }
-
-      const task = await response.json()
-      
-      console.log('Task status response:', task)
-      
-      // 只在日志数组有内容时才更新，避免闪烁
-      if (task.logs && task.logs.length > 0) {
-        setLogs(task.logs)
-      }
-      
-      // 更新进度和结果（支持渐进式显示）
-      if (task.result) {
-        console.log('=== Updating result ===')
-        setResult(task.result)
-      }
-
-      if (task.status === 'completed') {
-        console.log('=== Task completed ===')
-        console.log('Result:', task.result)
-        setLoading(false)
-      } else if (task.status === 'failed') {
-        console.log('=== Task failed ===')
-        console.log('Error:', task.error)
-        setLoading(false)
-      } else {
-        console.log('=== Task still processing, polling in 2s ===')
-        setTimeout(() => pollTaskStatus(id), 2000)
-      }
-    } catch (error: any) {
-      console.error('Poll error:', error)
-      setTimeout(() => pollTaskStatus(id), 2000)
+  const logs = React.useMemo<GenerationLogEntry[]>(() => {
+    if (task) {
+      return task.logs
     }
-  }
+
+    if (!error) {
+      return []
+    }
+
+    return [
+      {
+        timestamp: new Date().toLocaleTimeString('zh-CN'),
+        message: error,
+        level: 'error',
+      },
+    ]
+  }, [task, error])
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
@@ -143,7 +65,7 @@ export default function Home() {
           </div>
 
           <div className="space-y-8">
-            {result && <ResultPreview result={result} />}
+            <ResultPreview task={task} />
           </div>
         </div>
 

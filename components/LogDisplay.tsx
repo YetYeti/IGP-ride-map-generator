@@ -1,23 +1,18 @@
 'use client'
 
 import React, { useRef, useEffect } from 'react'
-import { Card, CardHeader, CardTitle, CardContent } from './ui/Card'
-
-export interface LogEntry {
-  timestamp: string
-  message: string
-  level: 'info' | 'success' | 'error' | 'warning'
-}
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
+import type { GenerationLogEntry } from '@/lib/generation/types'
 
 interface LogDisplayProps {
-  logs?: LogEntry[]
+  logs?: GenerationLogEntry[]
   id?: string
 }
 
 export function LogDisplay({ logs = [], id }: LogDisplayProps) {
   const logContainerRef = useRef<HTMLDivElement>(null)
 
-  const getLevelColor = (level: LogEntry['level']) => {
+  const getLevelColor = (level: GenerationLogEntry['level']) => {
     switch (level) {
       case 'error':
         return 'text-red-600'

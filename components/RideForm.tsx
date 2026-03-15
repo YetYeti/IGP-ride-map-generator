@@ -1,31 +1,14 @@
 'use client'
 
 import React from 'react'
-import { Button } from './ui/Button'
-import { Input } from './ui/Input'
-import { TrackSettings } from './TrackSettings'
-import { MapStyle } from '../lib/map-styles'
-
-interface CombinedMapSettings {
-  layoutPreset: 'compact' | 'standard' | 'loose' | 'custom'
-  trackWidth: number
-  trackSpacing: number
-  columns: number
-  trackPadding: number
-}
-
-interface RideFormData {
-  username: string
-  password: string
-  overlayMapStyle: MapStyle
-  generateCombinedMap: boolean
-  generateOverlayMaps: boolean
-  combinedMapSettings: CombinedMapSettings
-  selectedYear: number | 'all'
-}
+import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
+import { TrackSettings } from '@/components/TrackSettings'
+import { createInitialTaskRequest } from '@/lib/generation/request'
+import type { GenerationTaskRequest } from '@/lib/generation/types'
 
 interface RideFormProps {
-  onSubmit: (data: RideFormData) => void
+  onSubmit: (data: GenerationTaskRequest) => void
   loading: boolean
 }
 
@@ -39,28 +22,17 @@ export function RideForm({ onSubmit, loading }: RideFormProps) {
     return years
   }, [currentYear])
 
-  const [formData, setFormData] = React.useState<RideFormData>({
-    username: '',
-    password: '',
-    overlayMapStyle: 'default',
-    generateCombinedMap: true,
-    generateOverlayMaps: true,
-    selectedYear: 'all',
-    combinedMapSettings: {
-      layoutPreset: 'standard',
-      trackWidth: 8,
-      trackSpacing: 300,
-      columns: 6,
-      trackPadding: 0.1,
-    },
-  })
+  const [formData, setFormData] = React.useState<GenerationTaskRequest>(createInitialTaskRequest())
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     onSubmit(formData)
   }
 
-  const canSubmit = !loading && formData.username.trim() !== '' && formData.password.trim() !== ''
+  const canSubmit =
+    !loading &&
+    formData.credentials.username.trim() !== '' &&
+    formData.credentials.password.trim() !== ''
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -68,8 +40,18 @@ export function RideForm({ onSubmit, loading }: RideFormProps) {
         label="IGPSPORT 账号"
         type="text"
         placeholder="请输入您的 IGPSPORT 账号"
-        value={formData.username}
-        onChange={(e) => setFormData({ ...formData, username: e.currentTarget.value })}
+        value={formData.credentials.username}
+        onChange={(e) => {
+          const username = e.currentTarget.value
+
+          setFormData((prev) => ({
+            ...prev,
+            credentials: {
+              ...prev.credentials,
+              username,
+            },
+          }))
+        }}
         required
         disabled={loading}
       />
@@ -78,8 +60,18 @@ export function RideForm({ onSubmit, loading }: RideFormProps) {
         label="密码"
         type="password"
         placeholder="请输入您的密码"
-        value={formData.password}
-        onChange={(e) => setFormData({ ...formData, password: e.currentTarget.value })}
+        value={formData.credentials.password}
+        onChange={(e) => {
+          const password = e.currentTarget.value
+
+          setFormData((prev) => ({
+            ...prev,
+            credentials: {
+              ...prev.credentials,
+              password,
+            },
+          }))
+        }}
         required
         disabled={loading}
       />
@@ -87,13 +79,17 @@ export function RideForm({ onSubmit, loading }: RideFormProps) {
       <div className="flex flex-col space-y-1">
         <label className="text-sm font-medium text-gray-700">选择年份</label>
         <select
-          value={formData.selectedYear}
-          onChange={(e) =>
-            setFormData({
-              ...formData,
-              selectedYear: e.currentTarget.value === 'all' ? 'all' : Number(e.currentTarget.value),
-            })
-          }
+          value={formData.filters.year}
+          onChange={(e) => {
+            const yearValue = e.currentTarget.value
+
+            setFormData((prev) => ({
+              ...prev,
+              filters: {
+                year: yearValue === 'all' ? 'all' : Number(yearValue),
+              },
+            }))
+          }}
           disabled={loading}
           className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 disabled:cursor-not-allowed disabled:opacity-50"
         >
@@ -107,29 +103,24 @@ export function RideForm({ onSubmit, loading }: RideFormProps) {
       </div>
 
       <TrackSettings
-        overlayMapStyle={formData.overlayMapStyle}
-        generateCombinedMap={formData.generateCombinedMap}
-        generateOverlayMaps={formData.generateOverlayMaps}
-        combinedMapSettings={formData.combinedMapSettings}
-        onSelectMapStyle={(style) =>
-          setFormData({ ...formData, overlayMapStyle: style })
-        }
-        onToggleCombinedMap={() =>
+        combinedMap={formData.outputs.combinedMap}
+        overlayMap={formData.outputs.overlayMap}
+        onCombinedMapChange={(combinedMap) =>
           setFormData((prev) => ({
             ...prev,
-            generateCombinedMap: !prev.generateCombinedMap,
+            outputs: {
+              ...prev.outputs,
+              combinedMap,
+            },
           }))
         }
-        onToggleOverlayMaps={() =>
+        onOverlayMapChange={(overlayMap) =>
           setFormData((prev) => ({
             ...prev,
-            generateOverlayMaps: !prev.generateOverlayMaps,
-          }))
-        }
-        onCombinedMapSettingsChange={(settings) =>
-          setFormData((prev) => ({
-            ...prev,
-            combinedMapSettings: settings,
+            outputs: {
+              ...prev.outputs,
+              overlayMap,
+            },
           }))
         }
       />
