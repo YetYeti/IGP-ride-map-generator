@@ -153,7 +153,6 @@ export function TrackSettings({
     OverlayMapOutputConfig['style'],
     string,
   ][]
-  const visibleMapStyleEntries = mapStyleEntries.filter(([key]) => key !== 'cartodb_positron')
 
   const handleCombinedMapSettingsChange = (field: CombinedMapSettingField, value: number) => {
     onCombinedMapChange({
@@ -219,10 +218,9 @@ export function TrackSettings({
 
       {combinedMap.enabled && (
         <div className="rounded-lg border p-4">
-          <h3 className="mb-4 text-sm font-semibold">轨迹合成图设置</h3>
+          <h3 className="mb-4 text-sm font-semibold">轨迹合成图布局</h3>
           <div className="space-y-4">
             <div>
-              <label className="mb-1 block text-sm text-gray-600">布局预设</label>
               <select
                 value={combinedMap.layoutPreset}
                 onChange={(e) => handleLayoutPresetChange(e.currentTarget.value as CombinedMapLayoutPreset)}
@@ -288,7 +286,6 @@ export function TrackSettings({
       {overlayMap.enabled && (
         <div className="rounded-lg border p-4">
           <h3 className="mb-3 text-sm font-semibold">地图样式</h3>
-          <label className="mb-1 block text-sm text-gray-600">选择样式</label>
           <select
             value={overlayMap.style}
             onChange={(e) =>
@@ -299,7 +296,7 @@ export function TrackSettings({
             }
             className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400"
           >
-            {visibleMapStyleEntries.map(([key, label]) => (
+            {mapStyleEntries.map(([key, label]) => (
               <option key={key} value={key}>
                 {label}
               </option>
