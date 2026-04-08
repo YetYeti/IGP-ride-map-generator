@@ -9,11 +9,36 @@ import argparse
 from typing import List, Tuple
 import fitparse
 import folium
+from branca.element import Element
 
 # 常量
 TRACK_COLOR = "#F1532E"
 TRACK_WEIGHT = 2
 TRACK_OPACITY = 0.7
+ATTRIBUTION_STYLE = """
+<style>
+  .leaflet-control-attribution {
+    padding: 2px 6px !important;
+    font-size: 10px !important;
+    line-height: 1.3 !important;
+    color: rgba(15, 23, 42, 0.56) !important;
+    background: rgba(255, 255, 255, 0.58) !important;
+    backdrop-filter: blur(6px);
+    border-top-left-radius: 8px;
+    box-shadow: none !important;
+  }
+
+  .leaflet-control-attribution a {
+    color: rgba(15, 23, 42, 0.62) !important;
+    text-decoration: none;
+  }
+
+  .leaflet-control-attribution a:hover {
+    color: rgba(15, 23, 42, 0.86) !important;
+    text-decoration: underline;
+  }
+</style>
+"""
 
 # 地图样式配置 - 使用 folium.TileLayer 对象
 MAP_TILES = {
@@ -142,6 +167,9 @@ def generate_overlay_map(
 
         # 更新地图中心点
         m.location = [lat_center, long_center]
+
+        # 弱化 attribution 的视觉存在感，但保留必要的版权信息
+        m.get_root().header.add_child(Element(ATTRIBUTION_STYLE))
 
         # 保存HTML文件
         m.save(output_path)
