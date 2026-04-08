@@ -14,18 +14,18 @@ export function Button({
   ...props
 }: ButtonProps) {
   const baseStyles =
-    'inline-flex items-center justify-center rounded-full font-semibold tracking-[0.06em] transition-all duration-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--ring)] focus-visible:ring-offset-0 disabled:pointer-events-none disabled:opacity-50'
+    'inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50'
 
   const variants = {
-    default: 'bg-[color:var(--primary)] text-[color:var(--primary-foreground)] shadow-[0_18px_34px_rgba(240,91,42,0.24)] hover:-translate-y-0.5 hover:bg-[color:var(--primary-strong)]',
-    outline: 'border border-[color:var(--border-strong)] bg-white/55 text-[color:var(--foreground)] hover:bg-white/85',
-    ghost: 'bg-transparent text-[color:var(--muted-foreground)] hover:bg-white/60 hover:text-[color:var(--foreground)]',
+    default: 'bg-black text-white hover:bg-gray-800',
+    outline: 'border border-gray-300 bg-transparent hover:bg-gray-100',
+    ghost: 'hover:bg-gray-100',
   }
 
   const sizes = {
-    default: 'h-11 px-5 text-sm',
-    sm: 'h-9 px-4 text-xs',
-    lg: 'h-14 px-8 text-sm',
+    default: 'h-10 px-4 py-2',
+    sm: 'h-9 px-3',
+    lg: 'h-11 px-8',
   }
 
   return (

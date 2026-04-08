@@ -93,10 +93,8 @@ function NumberInput({ label, value, min, max, step = 1, disabled = false, onCha
   }
 
   return (
-    <div className="space-y-2">
-      <label className="block text-xs font-semibold tracking-[0.12em] text-[color:var(--muted-foreground)]">
-        {label}
-      </label>
+    <div>
+      <label className="mb-1 block text-sm text-gray-600">{label}</label>
       <div className="relative">
         <input
           type="number"
@@ -108,14 +106,14 @@ function NumberInput({ label, value, min, max, step = 1, disabled = false, onCha
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
           disabled={disabled}
-          className={`h-12 w-full rounded-[18px] border bg-white/75 px-4 py-2 pr-14 text-sm text-[color:var(--foreground)] focus:outline-none focus:ring-4 ${
+          className={`w-full rounded-md border px-3 py-2 pr-10 focus:outline-none focus:ring-2 ${
             disabled
-              ? 'cursor-not-allowed border-[color:var(--border)] bg-white/45 text-[color:var(--muted-foreground)]'
-              : 'border-[color:var(--border)] focus:ring-[color:var(--ring)]'
+              ? 'cursor-not-allowed border-gray-200 bg-gray-50 text-gray-400'
+              : 'border-gray-300 focus:ring-blue-500'
           }`}
         />
         {!disabled && (
-          <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-1 rounded-full border border-[color:var(--border)] bg-white/90 px-1.5 py-1 shadow-sm">
+          <div className="absolute right-2 top-1/2 flex -translate-y-1/2 flex-col items-center gap-0.5">
             <button
               type="button"
               onClick={() => {
@@ -123,7 +121,7 @@ function NumberInput({ label, value, min, max, step = 1, disabled = false, onCha
                 setInputValue(newValue.toString())
                 onChange(newValue)
               }}
-              className="rounded-full px-1 text-[color:var(--muted-foreground)] transition-colors hover:text-[color:var(--foreground)]"
+              className="cursor-pointer text-gray-400 hover:text-gray-600"
             >
               ▲
             </button>
@@ -134,7 +132,7 @@ function NumberInput({ label, value, min, max, step = 1, disabled = false, onCha
                 setInputValue(newValue.toString())
                 onChange(newValue)
               }}
-              className="rounded-full px-1 text-[color:var(--muted-foreground)] transition-colors hover:text-[color:var(--foreground)]"
+              className="cursor-pointer text-gray-400 hover:text-gray-600"
             >
               ▼
             </button>
@@ -182,86 +180,48 @@ export function TrackSettings({
   }
 
   return (
-    <div className="space-y-6">
-      <section className="space-y-3">
-        <div className="text-xs font-semibold tracking-[0.14em] text-[color:var(--muted-foreground)]">
-          输出模式
-        </div>
-        <div className="grid gap-3">
-          <button
-            type="button"
-            onClick={() =>
-              onCombinedMapChange({
-                ...combinedMap,
-                enabled: !combinedMap.enabled,
-              })
-            }
-            className={`w-full rounded-[22px] border p-4 text-left transition-all ${
-              combinedMap.enabled
-                ? 'border-[color:var(--primary)] bg-[linear-gradient(135deg,rgba(240,91,42,0.15),rgba(255,255,255,0.92))]'
-                : 'border-[color:var(--border)] bg-white/45 hover:bg-white/65'
-            }`}>
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="text-sm font-semibold text-[color:var(--foreground)]">生成轨迹合成图</div>
-                <div className="mt-1 text-sm text-[color:var(--muted-foreground)]">
-                  适合导出海报感拼图，突出年度骑行节奏。
-                </div>
-              </div>
-              <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                combinedMap.enabled
-                  ? 'bg-[color:var(--primary)] text-[color:var(--primary-foreground)]'
-                  : 'bg-white/80 text-[color:var(--muted-foreground)]'
-              }`}>
-                {combinedMap.enabled ? '开启' : '关闭'}
-              </span>
-            </div>
-          </button>
+    <div className="space-y-4">
+      <div className="rounded-lg border p-4">
+        <h3 className="mb-4 text-sm font-semibold">生成选项</h3>
+        <div className="space-y-3">
+          <label className="flex cursor-pointer items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={combinedMap.enabled}
+              onChange={() =>
+                onCombinedMapChange({
+                  ...combinedMap,
+                  enabled: !combinedMap.enabled,
+                })
+              }
+              className="h-4 w-4"
+            />
+            <span className="text-sm">生成轨迹合成图</span>
+          </label>
 
-          <button
-            type="button"
-            onClick={() =>
-              onOverlayMapChange({
-                ...overlayMap,
-                enabled: !overlayMap.enabled,
-              })
-            }
-            className={`w-full rounded-[22px] border p-4 text-left transition-all ${
-              overlayMap.enabled
-                ? 'border-emerald-400 bg-[linear-gradient(135deg,rgba(29,90,77,0.12),rgba(255,255,255,0.92))]'
-                : 'border-[color:var(--border)] bg-white/45 hover:bg-white/65'
-            }`}>
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="text-sm font-semibold text-[color:var(--foreground)]">生成轨迹叠加网页</div>
-                <div className="mt-1 text-sm text-[color:var(--muted-foreground)]">
-                  适合交互查看轨迹与不同底图样式。
-                </div>
-              </div>
-              <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                overlayMap.enabled
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-white/80 text-[color:var(--muted-foreground)]'
-              }`}>
-                {overlayMap.enabled ? '开启' : '关闭'}
-              </span>
-            </div>
-          </button>
+          <label className="flex cursor-pointer items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={overlayMap.enabled}
+              onChange={() =>
+                onOverlayMapChange({
+                  ...overlayMap,
+                  enabled: !overlayMap.enabled,
+                })
+              }
+              className="h-4 w-4"
+            />
+            <span className="text-sm">生成轨迹叠加网页</span>
+          </label>
         </div>
-      </section>
+      </div>
 
       {combinedMap.enabled && (
-        <section className="space-y-3 rounded-[24px] border border-[color:var(--border)] bg-white/40 p-5">
-          <div>
-            <div className="text-xs font-semibold tracking-[0.14em] text-[color:var(--muted-foreground)]">
-              合成图设置
-            </div>
-            <h3 className="mt-2 font-display text-2xl text-[color:var(--foreground)]">版式参数</h3>
-          </div>
-
-          <div className="space-y-5">
+        <div className="rounded-lg border p-4">
+          <h3 className="mb-4 text-sm font-semibold">轨迹合成图设置</h3>
+          <div className="space-y-4">
             <div>
-              <label className="mb-3 block text-sm font-medium text-[color:var(--secondary-foreground)]">
+              <label className="mb-2 block text-sm text-gray-600">
                 布局预设
               </label>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -269,36 +229,34 @@ export function TrackSettings({
                   CombinedMapLayoutPreset,
                   (typeof LAYOUT_PRESETS)[CombinedMapLayoutPreset],
                 ][]).map(([key, config]) => (
-                  <button
+                  <label
                     key={key}
-                    type="button"
-                    onClick={() => handleLayoutPresetChange(key)}
-                    className={`flex items-start gap-3 rounded-[20px] border p-4 text-left transition-all ${
+                    className={`flex cursor-pointer items-start space-x-2 rounded-md border-2 p-3 transition-colors ${
                       combinedMap.layoutPreset === key
-                        ? 'border-[color:var(--primary)] bg-[linear-gradient(135deg,rgba(240,91,42,0.12),rgba(255,255,255,0.94))]'
-                        : 'border-[color:var(--border)] bg-white/55 hover:bg-white/78'
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
-                    <span
-                      className={`mt-0.5 h-4 w-4 rounded-full border ${
-                        combinedMap.layoutPreset === key
-                          ? 'border-[color:var(--primary)] bg-[color:var(--primary)] ring-4 ring-[color:var(--ring)]'
-                          : 'border-[color:var(--border-strong)] bg-white'
-                      }`}
+                    <input
+                      type="radio"
+                      name="layoutPreset"
+                      checked={combinedMap.layoutPreset === key}
+                      onChange={() => handleLayoutPresetChange(key)}
+                      className="mt-0.5 h-4 w-4"
                     />
                     <div className="flex-1">
-                      <div className="text-sm font-semibold text-[color:var(--foreground)]">{config.label}</div>
-                      <div className="mt-1 text-xs text-[color:var(--muted-foreground)]">{config.description}</div>
+                      <div className="text-sm font-medium">{config.label}</div>
+                      <div className="mt-1 text-xs text-gray-500">{config.description}</div>
                     </div>
-                  </button>
+                  </label>
                 ))}
               </div>
             </div>
 
             {combinedMap.layoutPreset === 'custom' && (
-              <div className="border-t border-[color:var(--border)] pt-5">
-                <div className="mb-4 text-sm font-medium text-[color:var(--secondary-foreground)]">自定义参数</div>
-                <div className="grid gap-4 md:grid-cols-2">
+              <div className="border-t pt-4">
+                <div className="mb-3 text-sm font-medium text-gray-700">自定义参数</div>
+                <div className="space-y-3">
                   <NumberInput
                     label="轨迹线条粗细"
                     value={combinedMap.trackWidth}
@@ -335,15 +293,12 @@ export function TrackSettings({
               </div>
             )}
           </div>
-        </section>
+        </div>
       )}
 
       {overlayMap.enabled && (
-        <section className="space-y-3 rounded-[24px] border border-[color:var(--border)] bg-white/40 p-5">
-          <div className="text-xs font-semibold tracking-[0.14em] text-[color:var(--muted-foreground)]">
-            叠加网页样式
-          </div>
-          <h3 className="font-display text-2xl text-[color:var(--foreground)]">地图风格</h3>
+        <div className="rounded-lg border p-4">
+          <h3 className="mb-3 text-sm font-semibold">地图样式（单选）</h3>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {mapStyleEntries.map(([key, label]) => (
               <button
@@ -357,20 +312,29 @@ export function TrackSettings({
                 }
                 className="text-left"
               >
-                <div className={`rounded-[20px] border p-4 transition-all ${
+                <div className={`flex items-center space-x-2 rounded-md border p-3 transition-colors ${
                   overlayMap.style === key
-                    ? 'border-emerald-500 bg-[linear-gradient(135deg,rgba(29,90,77,0.14),rgba(255,255,255,0.96))]'
-                    : 'border-[color:var(--border)] bg-white/55 hover:bg-white/78'
+                    ? 'border-blue-500 bg-blue-50'
+                    : 'border-gray-200 hover:border-gray-300'
                 }`}>
-                  <div className="text-sm font-semibold text-[color:var(--foreground)]">{label}</div>
-                  <div className="mt-1 text-xs text-[color:var(--muted-foreground)]">
-                    {overlayMap.style === key ? '当前选择' : '点击切换到该底图'}
-                  </div>
+                  <input
+                    type="radio"
+                    name="mapStyle"
+                    checked={overlayMap.style === key}
+                    onChange={() =>
+                      onOverlayMapChange({
+                        ...overlayMap,
+                        style: key,
+                      })
+                    }
+                    className="h-4 w-4"
+                  />
+                  <span className="text-sm">{label}</span>
                 </div>
               </button>
             ))}
           </div>
-        </section>
+        </div>
       )}
     </div>
   )

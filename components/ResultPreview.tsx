@@ -75,68 +75,38 @@ export function ResultPreview({ task }: ResultPreviewProps) {
   }
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader className="border-b border-[color:var(--border)] bg-white/35">
-          <span className="eyebrow">结果概览</span>
-          <CardTitle>任务概览</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-3 pt-7 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-[22px] border border-[color:var(--border)] bg-white/65 p-4">
-            <div className="text-xs font-semibold tracking-[0.12em] text-[color:var(--muted-foreground)]">全部活动</div>
-            <div className="mt-3 font-display text-3xl">{task.stats.totalActivities}</div>
-          </div>
-          <div className="rounded-[22px] border border-[color:var(--border)] bg-white/65 p-4">
-            <div className="text-xs font-semibold tracking-[0.12em] text-[color:var(--muted-foreground)]">户外骑行</div>
-            <div className="mt-3 font-display text-3xl">{task.stats.outdoorActivities}</div>
-          </div>
-          <div className="rounded-[22px] border border-[color:var(--border)] bg-white/65 p-4">
-            <div className="text-xs font-semibold tracking-[0.12em] text-[color:var(--muted-foreground)]">筛选后活动</div>
-            <div className="mt-3 font-display text-3xl">{task.stats.filteredActivities}</div>
-          </div>
-          <div className="rounded-[22px] border border-[color:var(--border)] bg-white/65 p-4">
-            <div className="text-xs font-semibold tracking-[0.12em] text-[color:var(--muted-foreground)]">成功处理</div>
-            <div className="mt-3 font-display text-3xl">{task.stats.processedActivities}</div>
-          </div>
-        </CardContent>
-      </Card>
-
+    <div className="space-y-4">
       {combinedMaps.length > 0 && (
         <Card>
-          <CardHeader className="border-b border-[color:var(--border)] bg-white/35">
-            <span className="eyebrow">合成图预览</span>
+          <CardHeader>
             <CardTitle>轨迹合成图</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-5 pt-7">
+          <CardContent className="space-y-3">
             {combinedMaps.map((item, index) => (
-              <div key={index} className="space-y-3 rounded-[24px] border border-[color:var(--border)] bg-white/45 p-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <div className="text-sm font-semibold text-[color:var(--foreground)]">{item.filename}</div>
-                    <div className="text-xs text-[color:var(--muted-foreground)]">点击右侧可下载原图</div>
-                  </div>
-                  <Button
-                    size="sm"
-                    onClick={() => downloadFile(item.url, item.filename)}
-                  >
-                    下载 PNG
-                  </Button>
-                </div>
-                <div className="relative">
+              <div key={index} className="space-y-2">
+                <div className="relative overflow-hidden rounded bg-gray-100">
                   {previewImages[item.url] ? (
                     <img
                       src={item.url}
                       alt={item.filename}
-                      className="h-auto w-full rounded-[18px] object-contain"
+                      className="h-auto w-full object-contain"
                     />
                   ) : (
-                    <div className="flex h-[400px] w-full items-center justify-center rounded-[18px] bg-white/55">
-                      <div className="text-center text-[color:var(--muted-foreground)]">
+                    <div className="flex h-[400px] w-full items-center justify-center">
+                      <div className="text-center text-gray-500">
                         <div>加载中...</div>
                         <div className="mt-2 text-xs">{item.filename}</div>
                       </div>
                     </div>
                   )}
+                </div>
+                <div className="flex justify-end">
+                  <Button
+                    size="sm"
+                    onClick={() => downloadFile(item.url, item.filename)}
+                  >
+                    下载
+                  </Button>
                 </div>
               </div>
             ))}
@@ -146,36 +116,29 @@ export function ResultPreview({ task }: ResultPreviewProps) {
 
       {overlayMaps.length > 0 && (
         <Card>
-          <CardHeader className="border-b border-[color:var(--border)] bg-white/35">
-            <span className="eyebrow">网页预览</span>
+          <CardHeader>
             <CardTitle>轨迹叠加网页</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-5 pt-7">
+          <CardContent className="space-y-3">
             {overlayMaps.map((item, index) => (
-              <div key={index} className="space-y-3 rounded-[24px] border border-[color:var(--border)] bg-white/45 p-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <span className="text-sm font-semibold text-[color:var(--foreground)]">
-                      {item.style && MapStyleLabels[item.style]}
-                    </span>
-                    <div className="text-xs text-[color:var(--muted-foreground)]">{item.filename}</div>
-                  </div>
+              <div key={index} className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">
+                    {item.style && MapStyleLabels[item.style]}
+                  </span>
                   <Button
                     size="sm"
-                    variant="outline"
                     onClick={() => downloadFile(item.url, item.filename)}
                   >
                     下载 HTML
                   </Button>
                 </div>
-                <div className="overflow-hidden rounded-[18px] border border-[color:var(--border)] bg-white">
-                  <iframe
-                    src={item.url}
-                    className="w-full bg-white"
-                    style={{ height: '420px' }}
-                    title={item.filename}
-                  />
-                </div>
+                <iframe
+                  src={item.url}
+                  className="w-full rounded border"
+                  style={{ height: '400px' }}
+                  title={item.filename}
+                />
               </div>
             ))}
           </CardContent>
