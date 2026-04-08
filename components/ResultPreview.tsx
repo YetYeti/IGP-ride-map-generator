@@ -77,95 +77,88 @@ export function ResultPreview({ task }: ResultPreviewProps) {
   return (
     <div className="space-y-4">
       {overlayMaps.length > 0 && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between gap-3">
-              <CardTitle>轨迹叠加网页</CardTitle>
-              {overlayMaps.length === 1 && (
-                <Button
-                  size="sm"
-                  onClick={() => downloadFile(overlayMaps[0].url, overlayMaps[0].filename)}
-                >
-                  下载
-                </Button>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {overlayMaps.map((item, index) => (
-              <div key={index} className="space-y-2">
-                {overlayMaps.length > 1 && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">
-                      {item.style && MapStyleLabels[item.style]}
-                    </span>
-                    <Button
-                      size="sm"
-                      onClick={() => downloadFile(item.url, item.filename)}
-                    >
-                      下载
-                    </Button>
-              </div>
+        <section className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="text-2xl font-semibold leading-none tracking-tight">轨迹叠加网页</h3>
+            {overlayMaps.length === 1 && (
+              <Button
+                size="sm"
+                onClick={() => downloadFile(overlayMaps[0].url, overlayMaps[0].filename)}
+              >
+                下载
+              </Button>
             )}
-                <iframe
-                  src={item.url}
-                  className="aspect-square w-full rounded border"
-                  title={item.filename}
-                />
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+          </div>
+
+          {overlayMaps.map((item, index) => (
+            <div key={index} className="space-y-2">
+              {overlayMaps.length > 1 && (
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm font-medium">
+                    {item.style && MapStyleLabels[item.style]}
+                  </span>
+                  <Button
+                    size="sm"
+                    onClick={() => downloadFile(item.url, item.filename)}
+                  >
+                    下载
+                  </Button>
+                </div>
+              )}
+              <iframe
+                src={item.url}
+                className="aspect-square w-full rounded-lg"
+                title={item.filename}
+              />
+            </div>
+          ))}
+        </section>
       )}
 
       {combinedMaps.length > 0 && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between gap-3">
-              <CardTitle>轨迹合成图</CardTitle>
-              {combinedMaps.length === 1 && (
-                <Button
-                  size="sm"
-                  onClick={() => downloadFile(combinedMaps[0].url, combinedMaps[0].filename)}
-                >
-                  下载
-                </Button>
+        <section className="space-y-3 border-t border-gray-200 pt-6">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="text-2xl font-semibold leading-none tracking-tight">轨迹合成图</h3>
+            {combinedMaps.length === 1 && (
+              <Button
+                size="sm"
+                onClick={() => downloadFile(combinedMaps[0].url, combinedMaps[0].filename)}
+              >
+                下载
+              </Button>
+            )}
+          </div>
+
+          {combinedMaps.map((item, index) => (
+            <div key={index} className="space-y-2">
+              {previewImages[item.url] ? (
+                <img
+                  src={item.url}
+                  alt={item.filename}
+                  className="h-auto w-full rounded-lg object-contain"
+                />
+              ) : (
+                <div className="flex h-[400px] w-full items-center justify-center bg-gray-50">
+                  <div className="text-center text-gray-500">
+                    <div>加载中...</div>
+                    <div className="mt-2 text-xs">{item.filename}</div>
+                  </div>
+                </div>
+              )}
+
+              {combinedMaps.length > 1 && (
+                <div className="flex justify-end">
+                  <Button
+                    size="sm"
+                    onClick={() => downloadFile(item.url, item.filename)}
+                  >
+                    下载
+                  </Button>
+                </div>
               )}
             </div>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {combinedMaps.map((item, index) => (
-              <div key={index} className="space-y-2">
-                <div className="relative overflow-hidden rounded bg-gray-100">
-                  {previewImages[item.url] ? (
-                    <img
-                      src={item.url}
-                      alt={item.filename}
-                      className="h-auto w-full object-contain"
-                    />
-                  ) : (
-                    <div className="flex h-[400px] w-full items-center justify-center">
-                      <div className="text-center text-gray-500">
-                        <div>加载中...</div>
-                        <div className="mt-2 text-xs">{item.filename}</div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                {combinedMaps.length > 1 && (
-                  <div className="flex justify-end">
-                    <Button
-                      size="sm"
-                      onClick={() => downloadFile(item.url, item.filename)}
-                    >
-                      下载
-                    </Button>
-                  </div>
-                )}
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+          ))}
+        </section>
       )}
     </div>
   )
