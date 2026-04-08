@@ -7,10 +7,16 @@ import type { GenerationLogEntry } from '@/lib/generation/types'
 interface LogDisplayProps {
   logs?: GenerationLogEntry[]
   id?: string
+  compact?: boolean
+  maxEntries?: number
 }
 
-export function LogDisplay({ logs = [], id }: LogDisplayProps) {
+export function LogDisplay({ logs = [], id, compact = false, maxEntries }: LogDisplayProps) {
   const logContainerRef = useRef<HTMLDivElement>(null)
+  const visibleLogs = React.useMemo(
+    () => (maxEntries ? logs.slice(-maxEntries) : logs),
+    [logs, maxEntries]
+  )
 
   const getLevelColor = (level: GenerationLogEntry['level']) => {
     switch (level) {
@@ -33,18 +39,23 @@ export function LogDisplay({ logs = [], id }: LogDisplayProps) {
 
   return (
     <Card id={id} className="overflow-hidden">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg">处理日志</CardTitle>
+      <CardHeader className={compact ? 'pb-2' : 'pb-2'}>
+        <CardTitle className={compact ? 'text-base' : 'text-lg'}>运行日志</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
-        <div ref={logContainerRef} className="custom-scrollbar h-96 overflow-y-auto bg-gray-50 p-4 space-y-1">
-          {logs.length === 0 ? (
-            <p className="py-8 text-center text-sm text-gray-500">
-              暂无日志
+        <div
+          ref={logContainerRef}
+          className={`custom-scrollbar overflow-y-scroll bg-gray-50 ${
+            compact ? 'h-[24rem] p-3' : 'h-96 p-4'
+          } space-y-1`}
+        >
+          {visibleLogs.length === 0 ? (
+            <p className={`text-center text-gray-500 ${compact ? 'py-4 text-xs' : 'py-8 text-sm'}`}>
+              等待开始
             </p>
           ) : (
-            logs.map((log, index) => (
-              <div key={index} className="break-words text-sm font-mono">
+            visibleLogs.map((log, index) => (
+              <div key={index} className={`break-words font-mono ${compact ? 'text-xs' : 'text-sm'}`}>
                 <span className="text-gray-500">[{log.timestamp}]</span>{' '}
                 <span className={getLevelColor(log.level)}>{log.message}</span>
               </div>

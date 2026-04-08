@@ -125,7 +125,7 @@ async function runTask(taskId: string, request: GenerationTaskRequest) {
       }
     }
 
-    appendTaskLog(taskId, '生成完成！', 'success')
+    appendTaskLog(taskId, `成功生成${processedActivities.length}个骑行轨迹！`, 'success')
     setTaskCompleted(taskId)
   } finally {
     cleanupFitFiles(processedActivities.map((activity) => activity.RideId))

@@ -153,6 +153,7 @@ export function TrackSettings({
     OverlayMapOutputConfig['style'],
     string,
   ][]
+  const visibleMapStyleEntries = mapStyleEntries.filter(([key]) => key !== 'cartodb_positron')
 
   const handleCombinedMapSettingsChange = (field: CombinedMapSettingField, value: number) => {
     onCombinedMapChange({
@@ -187,21 +188,6 @@ export function TrackSettings({
           <label className="flex cursor-pointer items-center space-x-2">
             <input
               type="checkbox"
-              checked={combinedMap.enabled}
-              onChange={() =>
-                onCombinedMapChange({
-                  ...combinedMap,
-                  enabled: !combinedMap.enabled,
-                })
-              }
-              className="h-4 w-4"
-            />
-            <span className="text-sm">生成轨迹合成图</span>
-          </label>
-
-          <label className="flex cursor-pointer items-center space-x-2">
-            <input
-              type="checkbox"
               checked={overlayMap.enabled}
               onChange={() =>
                 onOverlayMapChange({
@@ -213,6 +199,21 @@ export function TrackSettings({
             />
             <span className="text-sm">生成轨迹叠加网页</span>
           </label>
+
+          <label className="flex cursor-pointer items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={combinedMap.enabled}
+              onChange={() =>
+                onCombinedMapChange({
+                  ...combinedMap,
+                  enabled: !combinedMap.enabled,
+                })
+              }
+              className="h-4 w-4"
+            />
+            <span className="text-sm">生成轨迹合成图</span>
+          </label>
         </div>
       </div>
 
@@ -221,36 +222,24 @@ export function TrackSettings({
           <h3 className="mb-4 text-sm font-semibold">轨迹合成图设置</h3>
           <div className="space-y-4">
             <div>
-              <label className="mb-2 block text-sm text-gray-600">
-                布局预设
-              </label>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <label className="mb-1 block text-sm text-gray-600">布局预设</label>
+              <select
+                value={combinedMap.layoutPreset}
+                onChange={(e) => handleLayoutPresetChange(e.currentTarget.value as CombinedMapLayoutPreset)}
+                className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400"
+              >
                 {(Object.entries(LAYOUT_PRESETS) as [
                   CombinedMapLayoutPreset,
                   (typeof LAYOUT_PRESETS)[CombinedMapLayoutPreset],
                 ][]).map(([key, config]) => (
-                  <label
-                    key={key}
-                    className={`flex cursor-pointer items-start space-x-2 rounded-md border-2 p-3 transition-colors ${
-                      combinedMap.layoutPreset === key
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="layoutPreset"
-                      checked={combinedMap.layoutPreset === key}
-                      onChange={() => handleLayoutPresetChange(key)}
-                      className="mt-0.5 h-4 w-4"
-                    />
-                    <div className="flex-1">
-                      <div className="text-sm font-medium">{config.label}</div>
-                      <div className="mt-1 text-xs text-gray-500">{config.description}</div>
-                    </div>
-                  </label>
+                  <option key={key} value={key}>
+                    {config.label}
+                  </option>
                 ))}
-              </div>
+              </select>
+              <p className="mt-2 text-xs text-gray-500">
+                {LAYOUT_PRESETS[combinedMap.layoutPreset].description}
+              </p>
             </div>
 
             {combinedMap.layoutPreset === 'custom' && (
@@ -298,42 +287,24 @@ export function TrackSettings({
 
       {overlayMap.enabled && (
         <div className="rounded-lg border p-4">
-          <h3 className="mb-3 text-sm font-semibold">地图样式（单选）</h3>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {mapStyleEntries.map(([key, label]) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() =>
-                  onOverlayMapChange({
-                    ...overlayMap,
-                    style: key,
-                  })
-                }
-                className="text-left"
-              >
-                <div className={`flex items-center space-x-2 rounded-md border p-3 transition-colors ${
-                  overlayMap.style === key
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}>
-                  <input
-                    type="radio"
-                    name="mapStyle"
-                    checked={overlayMap.style === key}
-                    onChange={() =>
-                      onOverlayMapChange({
-                        ...overlayMap,
-                        style: key,
-                      })
-                    }
-                    className="h-4 w-4"
-                  />
-                  <span className="text-sm">{label}</span>
-                </div>
-              </button>
+          <h3 className="mb-3 text-sm font-semibold">地图样式</h3>
+          <label className="mb-1 block text-sm text-gray-600">选择样式</label>
+          <select
+            value={overlayMap.style}
+            onChange={(e) =>
+              onOverlayMapChange({
+                ...overlayMap,
+                style: e.currentTarget.value as OverlayMapOutputConfig['style'],
+              })
+            }
+            className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400"
+          >
+            {visibleMapStyleEntries.map(([key, label]) => (
+              <option key={key} value={key}>
+                {label}
+              </option>
             ))}
-          </div>
+          </select>
         </div>
       )}
     </div>

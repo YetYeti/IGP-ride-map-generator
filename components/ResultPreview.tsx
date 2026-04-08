@@ -76,10 +76,62 @@ export function ResultPreview({ task }: ResultPreviewProps) {
 
   return (
     <div className="space-y-4">
+      {overlayMaps.length > 0 && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between gap-3">
+              <CardTitle>轨迹叠加网页</CardTitle>
+              {overlayMaps.length === 1 && (
+                <Button
+                  size="sm"
+                  onClick={() => downloadFile(overlayMaps[0].url, overlayMaps[0].filename)}
+                >
+                  下载
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {overlayMaps.map((item, index) => (
+              <div key={index} className="space-y-2">
+                {overlayMaps.length > 1 && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">
+                      {item.style && MapStyleLabels[item.style]}
+                    </span>
+                    <Button
+                      size="sm"
+                      onClick={() => downloadFile(item.url, item.filename)}
+                    >
+                      下载
+                    </Button>
+              </div>
+            )}
+                <iframe
+                  src={item.url}
+                  className="aspect-square w-full rounded border"
+                  title={item.filename}
+                />
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
       {combinedMaps.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>轨迹合成图</CardTitle>
+            <div className="flex items-center justify-between gap-3">
+              <CardTitle>轨迹合成图</CardTitle>
+              {combinedMaps.length === 1 && (
+                <Button
+                  size="sm"
+                  onClick={() => downloadFile(combinedMaps[0].url, combinedMaps[0].filename)}
+                >
+                  下载
+                </Button>
+              )}
+            </div>
           </CardHeader>
           <CardContent className="space-y-3">
             {combinedMaps.map((item, index) => (
@@ -100,45 +152,16 @@ export function ResultPreview({ task }: ResultPreviewProps) {
                     </div>
                   )}
                 </div>
-                <div className="flex justify-end">
-                  <Button
-                    size="sm"
-                    onClick={() => downloadFile(item.url, item.filename)}
-                  >
-                    下载
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
-
-      {overlayMaps.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>轨迹叠加网页</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {overlayMaps.map((item, index) => (
-              <div key={index} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">
-                    {item.style && MapStyleLabels[item.style]}
-                  </span>
-                  <Button
-                    size="sm"
-                    onClick={() => downloadFile(item.url, item.filename)}
-                  >
-                    下载 HTML
-                  </Button>
-                </div>
-                <iframe
-                  src={item.url}
-                  className="w-full rounded border"
-                  style={{ height: '400px' }}
-                  title={item.filename}
-                />
+                {combinedMaps.length > 1 && (
+                  <div className="flex justify-end">
+                    <Button
+                      size="sm"
+                      onClick={() => downloadFile(item.url, item.filename)}
+                    >
+                      下载
+                    </Button>
+                  </div>
+                )}
               </div>
             ))}
           </CardContent>
