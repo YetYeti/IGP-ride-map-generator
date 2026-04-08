@@ -106,12 +106,12 @@ async function runTask(taskId: string, request: GenerationTaskRequest) {
       return
     }
 
-    if (request.outputs.combinedMap.enabled && processedActivities.length > 0) {
-      await generateCombinedMap(taskId, processedActivities, request.outputs.combinedMap, tempDir)
-    }
-
     if (request.outputs.overlayMap.enabled && processedActivities.length > 0) {
       await generateOverlayMap(taskId, processedActivities, request.outputs.overlayMap, tempDir)
+    }
+
+    if (request.outputs.combinedMap.enabled && processedActivities.length > 0) {
+      await generateCombinedMap(taskId, processedActivities, request.outputs.combinedMap, tempDir)
     }
 
     if (requestedArtifactCount > 0) {
