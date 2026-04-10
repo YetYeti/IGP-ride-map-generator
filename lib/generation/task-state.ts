@@ -1,10 +1,17 @@
 import {
   EMPTY_OUTPUT_PROGRESS,
+  type GenerationArtifact,
   type GenerationLogEntry,
   type GenerationLogLevel,
   type GenerationOutputProgress,
+  type GenerationOutputStatus,
+  type GenerationTask,
   type GenerationTaskOutputsProgress,
 } from '@/lib/generation/types'
+
+export function createIsoTimestamp(): string {
+  return new Date().toISOString()
+}
 
 export function createEmptyOutputsProgress(): GenerationTaskOutputsProgress {
   return {
@@ -37,6 +44,59 @@ export function createTaskLogEntry(
     }),
     message,
     level,
+  }
+}
+
+export function appendTaskLogEntry(
+  task: GenerationTask,
+  message: string,
+  level: GenerationLogLevel = 'info'
+): GenerationTask {
+  return {
+    ...task,
+    logs: [
+      ...task.logs,
+      createTaskLogEntry(message, level),
+    ],
+  }
+}
+
+export function appendTaskArtifact(
+  task: GenerationTask,
+  artifact: Omit<GenerationArtifact, 'createdAt'> & { createdAt?: string }
+): GenerationTask {
+  return {
+    ...task,
+    artifacts: [
+      ...task.artifacts,
+      {
+        ...artifact,
+        createdAt: artifact.createdAt ?? createIsoTimestamp(),
+      },
+    ],
+  }
+}
+
+export function updateOutputProgressState(
+  task: GenerationTask,
+  output: 'combinedMap' | 'overlayMap',
+  updates: {
+    status?: GenerationOutputStatus
+    progress?: number
+  }
+): GenerationTask {
+  return {
+    ...task,
+    outputsProgress: {
+      ...task.outputsProgress,
+      [output]: {
+        ...task.outputsProgress[output],
+        ...('status' in updates && updates.status !== undefined ? { status: updates.status } : {}),
+        ...('progress' in updates && updates.progress !== undefined
+          ? { progress: clampProgress(updates.progress) }
+          : {}),
+      },
+    },
   }
 }
 

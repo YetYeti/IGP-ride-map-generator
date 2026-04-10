@@ -1,9 +1,12 @@
 import { v4 as uuidv4 } from 'uuid'
 import {
+  appendTaskArtifact,
+  appendTaskLogEntry,
   clampProgress,
+  createIsoTimestamp,
   createConfiguredOutputsProgress,
   createEmptyOutputsProgress,
-  createTaskLogEntry,
+  updateOutputProgressState,
 } from '@/lib/generation/task-state'
 import {
   EMPTY_GENERATION_TASK_STATS,
@@ -25,7 +28,7 @@ if (!global.__generationTasks) {
 }
 
 export function createTask(): GenerationTask {
-  const timestamp = new Date().toISOString()
+  const timestamp = createIsoTimestamp()
   const task: GenerationTask = {
     id: uuidv4(),
     status: 'queued',
@@ -86,13 +89,7 @@ export function appendTaskLog(
   message: string,
   level: GenerationLogLevel = 'info'
 ): GenerationTask | null {
-  return mutateTask(taskId, (task) => ({
-    ...task,
-    logs: [
-      ...task.logs,
-      createTaskLogEntry(message, level),
-    ],
-  }))
+  return mutateTask(taskId, (task) => appendTaskLogEntry(task, message, level))
 }
 
 export function updateTaskStats(
@@ -112,16 +109,7 @@ export function addTaskArtifact(
   taskId: string,
   artifact: Omit<GenerationArtifact, 'createdAt'> & { createdAt?: string }
 ): GenerationTask | null {
-  return mutateTask(taskId, (task) => ({
-    ...task,
-    artifacts: [
-      ...task.artifacts,
-      {
-        ...artifact,
-        createdAt: artifact.createdAt ?? new Date().toISOString(),
-      },
-    ],
-  }))
+  return mutateTask(taskId, (task) => appendTaskArtifact(task, artifact))
 }
 
 export function configureTaskOutputs(
@@ -145,19 +133,7 @@ export function updateTaskOutputProgress(
     progress?: number
   }
 ): GenerationTask | null {
-  return mutateTask(taskId, (task) => ({
-    ...task,
-    outputsProgress: {
-      ...task.outputsProgress,
-      [output]: {
-        ...task.outputsProgress[output],
-        ...('status' in updates && updates.status !== undefined ? { status: updates.status } : {}),
-        ...('progress' in updates && updates.progress !== undefined
-          ? { progress: clampProgress(updates.progress) }
-          : {}),
-      },
-    },
-  }))
+  return mutateTask(taskId, (task) => updateOutputProgressState(task, output, updates))
 }
 
 function mutateTask(
@@ -171,7 +147,7 @@ function mutateTask(
 
   const updatedTask = {
     ...updater(task),
-    updatedAt: new Date().toISOString(),
+    updatedAt: createIsoTimestamp(),
   }
 
   generationTasks.set(taskId, updatedTask)
