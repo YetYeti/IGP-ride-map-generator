@@ -1,11 +1,15 @@
 import { extractActivityItems, mapActivityItem } from '@/lib/igpsport-activity'
 import {
-  buildIGPSPORTDownloadHeaders,
   buildIGPSPORTHeaders,
   extractSetCookieHeaders,
   storeCookies,
 } from '@/lib/igpsport-auth'
 import { logIGPSPORTError } from '@/lib/igpsport-errors'
+import {
+  downloadIGPSPORTFitFile,
+  fetchIGPSPORTActivitiesPage,
+  fetchIGPSPORTFitDownloadUrl,
+} from '@/lib/igpsport-request'
 export type { Activity } from '@/lib/igpsport-types'
 import type { Activity } from '@/lib/igpsport-types'
 
@@ -65,39 +69,14 @@ export class IGPSPORTClient {
     }
   }
 
-  private getHeaders() {
-    return buildIGPSPORTHeaders(this.cookieJar)
-  }
-
   async getActivities(
     pageIndex: number = 1,
     pageSize: number = 20
   ): Promise<Activity[]> {
     this.ensureLoggedIn()
 
-    const url = new URL('https://my.igpsport.com/Activity/ActivityList')
-    url.searchParams.append('pageIndex', pageIndex.toString())
-    url.searchParams.append('pageSize', pageSize.toString())
-
-    console.log('=== Fetching Activities ===')
-    console.log('Page:', pageIndex, 'PageSize:', pageSize)
-    console.log('URL:', url.toString())
-
     try {
-      const response = await fetch(url.toString(), {
-        method: 'GET',
-        headers: this.getHeaders(),
-      })
-
-      console.log('Activities response status:', response.status)
-
-      if (!response.ok) {
-        console.error('Activities request failed, status:', response.status)
-        throw new Error('获取活动列表失败')
-      }
-
-      const text = await response.text()
-      console.log('Activities response length:', text.length)
+      const text = await fetchIGPSPORTActivitiesPage(this.cookieJar, pageIndex, pageSize)
 
       if (this.hasEmptyResponseText(text, 'Empty response from activities API')) {
         return []
@@ -124,24 +103,11 @@ export class IGPSPORTClient {
   async downloadFitFile(rideId: number): Promise<Buffer> {
     this.ensureLoggedIn()
 
-    const fitJsonUrl = `https://prod.zh.igpsport.com/service/web-gateway/web-analyze/activity/getDownloadUrl/${rideId}`
-
     console.log('=== Downloading FIT File ===')
     console.log('Ride ID:', rideId)
 
     try {
-      const jsonResponse = await fetch(fitJsonUrl, {
-        method: 'GET',
-        headers: this.getHeaders(),
-      })
-
-      if (!jsonResponse.ok) {
-        console.error('Get download URL failed, status:', jsonResponse.status)
-        throw new Error(`获取活动 ${rideId} 的下载链接失败`)
-      }
-
-      const text = await jsonResponse.text()
-      console.log('Download URL response length:', text.length)
+      const text = await fetchIGPSPORTFitDownloadUrl(this.cookieJar, rideId)
 
       if (this.hasEmptyResponseText(text, 'Empty response from download URL API')) {
         throw new Error(`活动 ${rideId} 的详细数据未找到（空响应）`)
@@ -158,20 +124,7 @@ export class IGPSPORTClient {
       const fitUrl = jsonResult.data
       console.log('FIT URL obtained:', fitUrl)
 
-      const fitResponse = await fetch(fitUrl, {
-        method: 'GET',
-        headers: buildIGPSPORTDownloadHeaders(),
-      })
-
-      if (!fitResponse.ok) {
-        console.error('Download FIT file failed, status:', fitResponse.status)
-        throw new Error(`下载 FIT 文件 ${rideId}.fit 失败`)
-      }
-
-      const arrayBuffer = await fitResponse.arrayBuffer()
-      console.log('FIT file downloaded, size:', arrayBuffer.byteLength)
-
-      return Buffer.from(arrayBuffer)
+      return downloadIGPSPORTFitFile(fitUrl)
     } catch (error: unknown) {
       logIGPSPORTError('Download FIT file error:', error)
       throw error
