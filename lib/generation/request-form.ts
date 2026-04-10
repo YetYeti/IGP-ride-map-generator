@@ -89,3 +89,24 @@ export function updateRequestOverlayMap(
     },
   }
 }
+
+export function getAvailableYears(currentYear: number, count: number = 10): number[] {
+  const years: number[] = []
+
+  for (let index = 0; index < count; index++) {
+    years.push(currentYear - index)
+  }
+
+  return years
+}
+
+export function canSubmitRequest(
+  request: GenerationTaskRequest,
+  loading: boolean
+): boolean {
+  return (
+    !loading &&
+    request.credentials.username.trim() !== '' &&
+    request.credentials.password.trim() !== ''
+  )
+}

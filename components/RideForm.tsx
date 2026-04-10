@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { TrackSettings } from '@/components/TrackSettings'
 import {
+  canSubmitRequest,
+  getAvailableYears,
   syncRequestCredentials,
   updateRequestCombinedMap,
   updateRequestOverlayMap,
@@ -22,13 +24,7 @@ interface RideFormProps {
 
 export function RideForm({ onSubmit, loading }: RideFormProps) {
   const currentYear = new Date().getFullYear()
-  const availableYears = React.useMemo(() => {
-    const years: number[] = []
-    for (let i = 0; i < 10; i++) {
-      years.push(currentYear - i)
-    }
-    return years
-  }, [currentYear])
+  const availableYears = React.useMemo(() => getAvailableYears(currentYear), [currentYear])
 
   const [formData, setFormData] = React.useState<GenerationTaskRequest>(createInitialTaskRequest())
   const usernameInputRef = React.useRef<HTMLInputElement | null>(null)
@@ -61,10 +57,7 @@ export function RideForm({ onSubmit, loading }: RideFormProps) {
     onSubmit(formData)
   }
 
-  const canSubmit =
-    !loading &&
-    formData.credentials.username.trim() !== '' &&
-    formData.credentials.password.trim() !== ''
+  const canSubmit = canSubmitRequest(formData, loading)
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
