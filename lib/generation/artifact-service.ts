@@ -1,45 +1,24 @@
-import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, unlinkSync } from 'fs'
+import { existsSync, readFileSync, readdirSync, statSync, unlinkSync } from 'fs'
 import path from 'path'
+import {
+  buildArtifactUrl,
+  ensureTempDir,
+  getArtifactDir,
+  getArtifactPath,
+  getFitDir,
+  getFitFilePath,
+  getTempDir,
+} from '@/lib/generation/artifact-paths'
 
 export const FILE_TTL_MS = 30 * 60 * 1000
-
-export function getTempDir(): string {
-  return getArtifactDir()
-}
-
-export function getArtifactDir(): string {
-  return process.env.TEMP_DIR || path.join(process.cwd(), 'public', 'outputs')
-}
-
-export function getFitDir(): string {
-  return process.env.TEMP_DIR || path.join(process.cwd(), 'public', 'fit_files')
-}
-
-export function ensureTempDir(): string {
-  const artifactDir = getArtifactDir()
-  const fitDir = getFitDir()
-
-  if (!existsSync(artifactDir)) {
-    mkdirSync(artifactDir, { recursive: true })
-  }
-
-  if (fitDir !== artifactDir && !existsSync(fitDir)) {
-    mkdirSync(fitDir, { recursive: true })
-  }
-
-  return artifactDir
-}
-
-export function buildArtifactUrl(taskId: string, filename: string): string {
-  return `/api/tasks/${taskId}/artifacts/${filename}`
-}
-
-export function getArtifactPath(filename: string): string {
-  return path.join(getArtifactDir(), filename)
-}
-
-export function getFitFilePath(rideId: number): string {
-  return path.join(getFitDir(), `${rideId}.fit`)
+export {
+  buildArtifactUrl,
+  ensureTempDir,
+  getArtifactDir,
+  getArtifactPath,
+  getFitDir,
+  getFitFilePath,
+  getTempDir,
 }
 
 export function hasUsableFitFile(rideId: number): boolean {
