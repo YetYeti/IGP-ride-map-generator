@@ -36,18 +36,12 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/igpsport-ride-vercel"
-Documentation = "https://github.com/yourusername/igpsport-ride-vercel#readme"
-Repository = "https://github.com/yourusername/igpsport-ride-vercel"
-Issues = "https://github.com/yourusername/igpsport-ride-vercel/issues"
+Repository = "https://github.com/YetYeti/IGP-ride-map-generator"
+Issues = "https://github.com/YetYeti/IGP-ride-map-generator/issues"
 
 [build-system]
 requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
-
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["api/python/*"]
 
 [tool.uv]
 index-url = "https://pypi.tuna.tsinghua.edu.cn/simple"
