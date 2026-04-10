@@ -5,6 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { RideForm } from '@/components/RideForm'
 import { ResultPreview } from '@/components/ResultPreview'
 import { useGenerationTask } from '@/hooks/useGenerationTask'
+import { getLatestTaskMessage, getTaskStatusLabel } from '@/lib/generation/task-display'
 import type { GenerationLogEntry, GenerationTaskRequest } from '@/lib/generation/types'
 
 export default function Home() {
@@ -32,16 +33,8 @@ export default function Home() {
     ]
   }, [task, error])
 
-  const statusLabel =
-    task?.status === 'completed'
-      ? '已完成'
-      : task?.status === 'failed'
-        ? '失败'
-        : loading
-          ? '生成中'
-          : '待开始'
-
-  const latestMessage = task?.error ?? logs.at(-1)?.message ?? '填写左侧参数后即可开始生成。'
+  const statusLabel = getTaskStatusLabel(task, loading)
+  const latestMessage = getLatestTaskMessage(task, logs)
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
