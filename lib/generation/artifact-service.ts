@@ -4,17 +4,30 @@ import path from 'path'
 export const FILE_TTL_MS = 30 * 60 * 1000
 
 export function getTempDir(): string {
-  return process.env.TEMP_DIR || path.join(process.cwd(), 'public', 'temp')
+  return getArtifactDir()
+}
+
+export function getArtifactDir(): string {
+  return process.env.TEMP_DIR || path.join(process.cwd(), 'public', 'outputs')
+}
+
+export function getFitDir(): string {
+  return process.env.TEMP_DIR || path.join(process.cwd(), 'public', 'fit_files')
 }
 
 export function ensureTempDir(): string {
-  const tempDir = getTempDir()
+  const artifactDir = getArtifactDir()
+  const fitDir = getFitDir()
 
-  if (!existsSync(tempDir)) {
-    mkdirSync(tempDir, { recursive: true })
+  if (!existsSync(artifactDir)) {
+    mkdirSync(artifactDir, { recursive: true })
   }
 
-  return tempDir
+  if (fitDir !== artifactDir && !existsSync(fitDir)) {
+    mkdirSync(fitDir, { recursive: true })
+  }
+
+  return artifactDir
 }
 
 export function buildArtifactUrl(taskId: string, filename: string): string {
@@ -22,11 +35,11 @@ export function buildArtifactUrl(taskId: string, filename: string): string {
 }
 
 export function getArtifactPath(filename: string): string {
-  return path.join(getTempDir(), filename)
+  return path.join(getArtifactDir(), filename)
 }
 
 export function getFitFilePath(rideId: number): string {
-  return path.join(getTempDir(), `${rideId}.fit`)
+  return path.join(getFitDir(), `${rideId}.fit`)
 }
 
 export function hasUsableFitFile(rideId: number): boolean {
@@ -45,18 +58,18 @@ export function hasUsableFitFile(rideId: number): boolean {
 }
 
 export function cleanupExpiredFiles(maxAgeMs: number = FILE_TTL_MS) {
-  const tempDir = getTempDir()
+  const artifactDir = getArtifactDir()
 
   try {
-    if (!existsSync(tempDir)) {
+    if (!existsSync(artifactDir)) {
       return
     }
 
-    const files = readdirSync(tempDir)
+    const files = readdirSync(artifactDir)
     const now = Date.now()
 
     for (const file of files) {
-      const filePath = path.join(tempDir, file)
+      const filePath = path.join(artifactDir, file)
 
       try {
         const stats = statSync(filePath)
@@ -81,9 +94,9 @@ export function cleanupExpiredFiles(maxAgeMs: number = FILE_TTL_MS) {
 }
 
 export function cleanupFitFiles(rideIds: number[]) {
-  const tempDir = getTempDir()
+  const fitDir = getFitDir()
 
-  if (!existsSync(tempDir)) {
+  if (!existsSync(fitDir)) {
     return
   }
 
