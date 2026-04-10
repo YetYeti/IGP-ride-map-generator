@@ -23,6 +23,46 @@ export function RideForm({ onSubmit, loading }: RideFormProps) {
   }, [currentYear])
 
   const [formData, setFormData] = React.useState<GenerationTaskRequest>(createInitialTaskRequest())
+  const usernameInputRef = React.useRef<HTMLInputElement | null>(null)
+  const passwordInputRef = React.useRef<HTMLInputElement | null>(null)
+
+  React.useEffect(() => {
+    const syncAutofilledCredentials = () => {
+      const username = usernameInputRef.current?.value ?? ''
+      const password = passwordInputRef.current?.value ?? ''
+
+      setFormData((prev) => {
+        if (
+          prev.credentials.username === username &&
+          prev.credentials.password === password
+        ) {
+          return prev
+        }
+
+        return {
+          ...prev,
+          credentials: {
+            ...prev.credentials,
+            username,
+            password,
+          },
+        }
+      })
+    }
+
+    const timeoutId = window.setTimeout(syncAutofilledCredentials, 120)
+    const animationFrameId = window.requestAnimationFrame(syncAutofilledCredentials)
+
+    window.addEventListener('focus', syncAutofilledCredentials)
+    window.addEventListener('pageshow', syncAutofilledCredentials)
+
+    return () => {
+      window.clearTimeout(timeoutId)
+      window.cancelAnimationFrame(animationFrameId)
+      window.removeEventListener('focus', syncAutofilledCredentials)
+      window.removeEventListener('pageshow', syncAutofilledCredentials)
+    }
+  }, [])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -37,8 +77,11 @@ export function RideForm({ onSubmit, loading }: RideFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <Input
+        ref={usernameInputRef}
         label="IGPSPORT 账号"
         type="text"
+        name="username"
+        autoComplete="username"
         placeholder="请输入您的 IGPSPORT 账号"
         value={formData.credentials.username}
         onChange={(e) => {
@@ -57,8 +100,11 @@ export function RideForm({ onSubmit, loading }: RideFormProps) {
       />
 
       <Input
+        ref={passwordInputRef}
         label="密码"
         type="password"
+        name="password"
+        autoComplete="current-password"
         placeholder="请输入您的密码"
         value={formData.credentials.password}
         onChange={(e) => {
