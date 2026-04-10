@@ -1,31 +1,6 @@
-export interface Activity {
-  RideId: number
-  MemberId: number
-  Title: string
-  sport: string
-  sub_sport: string
-  start_time: Date
-  total_ascent: number
-  total_descent: number
-  total_calories: number
-  total_distance: number
-  total_elapsed_time: number
-  total_moving_time: number
-  avg_cadence: number
-  max_cadence: number
-  avg_heart_rate: number
-  min_heart_rate: number
-  max_heart_rate: number
-  avg_power: number
-  max_power: number
-  avg_speed: number
-  max_speed: number
-  avg_temperature: number
-  max_temperature: number
-  intensity_factor: number
-  normalized_power: number
-  training_stress_score: number
-}
+import { extractActivityItems, mapActivityItem } from '@/lib/igpsport-activity'
+export type { Activity } from '@/lib/igpsport-types'
+import type { Activity } from '@/lib/igpsport-types'
 
 export class IGPSPORTClient {
   private cookieJar: Map<string, string> = new Map()
@@ -114,18 +89,6 @@ export class IGPSPORTClient {
     return headers
   }
 
-  private parseActivityDate(data: Record<string, unknown>): Date {
-    const dateFields = ['StartTime', 'start_time', 'BeginTime', 'beginTime', 'Date', 'date']
-    for (const field of dateFields) {
-      const value = data[field]
-      if (typeof value === 'string' || typeof value === 'number') {
-        return new Date(value)
-      }
-    }
-    return new Date()
-  }
-
-
   async getActivities(
     pageIndex: number = 1,
     pageSize: number = 20
@@ -164,8 +127,7 @@ export class IGPSPORTClient {
       }
 
       const result = JSON.parse(text)
-
-      const activitiesData = result.item || []
+      const activitiesData = extractActivityItems(result)
       console.log('Activities data length:', activitiesData.length)
 
       if (activitiesData.length > 0) {
@@ -173,37 +135,7 @@ export class IGPSPORTClient {
         console.log('First activity sample:', JSON.stringify(activitiesData[0], null, 2))
       }
 
-      const activities: Activity[] = activitiesData.map(
-        (data: any) =>
-          ({
-            RideId: data.RideId,
-            MemberId: data.MemberId,
-            Title: data.Title,
-            sport: 'None',
-            sub_sport: 'None',
-            start_time: this.parseActivityDate(data),
-            total_ascent: 0,
-            total_descent: 0,
-            total_calories: 0,
-            total_distance: 0,
-            total_elapsed_time: 0,
-            total_moving_time: 0,
-            avg_cadence: 0,
-            max_cadence: 0,
-            avg_heart_rate: 0,
-            min_heart_rate: 0,
-            max_heart_rate: 0,
-            avg_power: 0,
-            max_power: 0,
-            avg_speed: 0,
-            max_speed: 0,
-            avg_temperature: 0,
-            max_temperature: 0,
-            intensity_factor: 0,
-            normalized_power: 0,
-            training_stress_score: 0,
-          }) satisfies Activity
-      )
+      const activities = activitiesData.map(mapActivityItem)
 
       return activities
     } catch (error: any) {
