@@ -134,29 +134,25 @@ export function updateTaskOutputProgress(
 
 function mutateTask(
   taskId: string,
-  updater: (task: GenerationTask) => GenerationTask
+  mutator: (task: GenerationTask) => void
 ): GenerationTask | null {
   const task = generationTasks.get(taskId)
   if (!task) {
     return null
   }
 
-  const updatedTask = {
-    ...updater(task),
-    updatedAt: createIsoTimestamp(),
-  }
+  mutator(task)
+  task.updatedAt = createIsoTimestamp()
 
-  generationTasks.set(taskId, updatedTask)
-
-  return cloneTask(updatedTask)
+  return task
 }
 
 function patchTask(
   taskId: string,
   updates: Partial<GenerationTask> | ((task: GenerationTask) => Partial<GenerationTask>)
 ): GenerationTask | null {
-  return mutateTask(taskId, (task) => ({
-    ...task,
-    ...(typeof updates === 'function' ? updates(task) : updates),
-  }))
+  return mutateTask(taskId, (task) => {
+    const patch = typeof updates === 'function' ? updates(task) : updates
+    Object.assign(task, patch)
+  })
 }

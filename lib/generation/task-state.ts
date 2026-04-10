@@ -54,30 +54,20 @@ export function appendTaskLogEntry(
   task: GenerationTask,
   message: string,
   level: GenerationLogLevel = 'info'
-): GenerationTask {
-  return {
-    ...task,
-    logs: [
-      ...task.logs,
-      createTaskLogEntry(message, level),
-    ],
-  }
+): void {
+  task.logs.push(createTaskLogEntry(message, level))
+  task.updatedAt = createIsoTimestamp()
 }
 
 export function appendTaskArtifact(
   task: GenerationTask,
   artifact: Omit<GenerationArtifact, 'createdAt'> & { createdAt?: string }
-): GenerationTask {
-  return {
-    ...task,
-    artifacts: [
-      ...task.artifacts,
-      {
-        ...artifact,
-        createdAt: artifact.createdAt ?? createIsoTimestamp(),
-      },
-    ],
-  }
+): void {
+  task.artifacts.push({
+    ...artifact,
+    createdAt: artifact.createdAt ?? createIsoTimestamp(),
+  })
+  task.updatedAt = createIsoTimestamp()
 }
 
 export function updateOutputProgressState(
@@ -87,20 +77,15 @@ export function updateOutputProgressState(
     status?: GenerationOutputStatus
     progress?: number
   }
-): GenerationTask {
-  return {
-    ...task,
-    outputsProgress: {
-      ...task.outputsProgress,
-      [output]: {
-        ...task.outputsProgress[output],
-        ...('status' in updates && updates.status !== undefined ? { status: updates.status } : {}),
-        ...('progress' in updates && updates.progress !== undefined
-          ? { progress: clampProgress(updates.progress) }
-          : {}),
-      },
-    },
+): void {
+  const current = task.outputsProgress[output]
+  if ('status' in updates && updates.status !== undefined) {
+    current.status = updates.status
   }
+  if ('progress' in updates && updates.progress !== undefined) {
+    current.progress = clampProgress(updates.progress)
+  }
+  task.updatedAt = createIsoTimestamp()
 }
 
 export function clampProgress(progress: number): number {
