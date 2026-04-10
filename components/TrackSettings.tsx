@@ -5,6 +5,8 @@ import {
   applyCombinedMapLayoutPreset,
   COMBINED_MAP_LAYOUT_PRESETS,
   type CombinedMapSettingField,
+  normalizeNumberInputValue,
+  stepNumberInputValue,
   toggleCombinedMap,
   toggleOverlayMap,
   updateCombinedMapSetting,
@@ -42,14 +44,9 @@ function NumberInput({ label, value, min, max, step = 1, disabled = false, onCha
   }, [value])
 
   const handleBlur = () => {
-    const num = Number(inputValue)
-    if (isNaN(num)) {
-      setInputValue(value.toString())
-    } else {
-      const clamped = Math.max(min, Math.min(max, num))
-      setInputValue(clamped.toString())
-      onChange(clamped)
-    }
+    const normalizedValue = normalizeNumberInputValue(inputValue, value, min, max)
+    setInputValue(normalizedValue.inputValue)
+    onChange(normalizedValue.value)
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -87,7 +84,7 @@ function NumberInput({ label, value, min, max, step = 1, disabled = false, onCha
             <button
               type="button"
               onClick={() => {
-                const newValue = Math.min(max, value + step)
+                const newValue = stepNumberInputValue(value, min, max, step, 'up')
                 setInputValue(newValue.toString())
                 onChange(newValue)
               }}
@@ -98,7 +95,7 @@ function NumberInput({ label, value, min, max, step = 1, disabled = false, onCha
             <button
               type="button"
               onClick={() => {
-                const newValue = Math.max(min, value - step)
+                const newValue = stepNumberInputValue(value, min, max, step, 'down')
                 setInputValue(newValue.toString())
                 onChange(newValue)
               }}
