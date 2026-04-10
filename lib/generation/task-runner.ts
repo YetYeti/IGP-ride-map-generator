@@ -16,8 +16,9 @@ import {
 import {
   buildArtifactUrl,
   cleanupExpiredFiles,
-  cleanupFitFiles,
   ensureTempDir,
+  getFitFilePath,
+  hasUsableFitFile,
 } from '@/lib/generation/artifact-service'
 import { executePythonScript } from '@/lib/generation/python-runner'
 import type {
@@ -51,8 +52,7 @@ async function runTask(taskId: string, request: GenerationTaskRequest) {
   appendTaskLog(taskId, '开始生成轨迹...', 'info')
   updateRequestedOutputsProgress(taskId, request, 5, 'pending')
 
-  try {
-    cleanupExpiredFiles()
+  cleanupExpiredFiles()
 
     appendTaskLog(taskId, '正在登录 IGPSPORT...', 'info')
     await client.login(request.credentials.username, request.credentials.password)
@@ -88,7 +88,7 @@ async function runTask(taskId: string, request: GenerationTaskRequest) {
     setTaskProgress(taskId, 30)
     updateRequestedOutputsProgress(taskId, request, 30, 'pending')
 
-    await downloadFitFiles(taskId, client, filteredActivities, tempDir, processedActivities, request)
+    await downloadFitFiles(taskId, client, filteredActivities, processedActivities, request)
 
     updateTaskStats(taskId, {
       processedActivities: processedActivities.length,
@@ -125,18 +125,14 @@ async function runTask(taskId: string, request: GenerationTaskRequest) {
       }
     }
 
-    appendTaskLog(taskId, `成功生成${processedActivities.length}个骑行轨迹！`, 'success')
-    setTaskCompleted(taskId)
-  } finally {
-    cleanupFitFiles(processedActivities.map((activity) => activity.RideId))
-  }
+  appendTaskLog(taskId, `成功生成${processedActivities.length}个骑行轨迹！`, 'success')
+  setTaskCompleted(taskId)
 }
 
 async function downloadFitFiles(
   taskId: string,
   client: IGPSPORTClient,
   activities: Activity[],
-  tempDir: string,
   processedActivities: Activity[],
   request: GenerationTaskRequest
 ) {
@@ -154,8 +150,14 @@ async function downloadFitFiles(
     const batchResults = await Promise.all(
       batch.map(async (activity) => {
         try {
+          const fitFilePath = getFitFilePath(activity.RideId)
+
+          if (hasUsableFitFile(activity.RideId)) {
+            appendTaskLog(taskId, `活动 ${activity.RideId} 已存在本地 FIT，跳过下载`, 'info')
+            return activity
+          }
+
           const fitFile = await client.downloadFitFile(activity.RideId)
-          const fitFilePath = path.join(tempDir, `${activity.RideId}.fit`)
           writeFileSync(fitFilePath, fitFile)
           return activity
         } catch (error: unknown) {
@@ -195,7 +197,7 @@ async function generateCombinedMap(
   const scriptPath = path.join(process.cwd(), 'lib/python/generate_combined_map.py')
   const filename = `combined_map_${taskId}.png`
   const outputPath = path.join(tempDir, filename)
-  const fitFilePaths = processedActivities.map((activity) => path.join(tempDir, `${activity.RideId}.fit`))
+  const fitFilePaths = processedActivities.map((activity) => getFitFilePath(activity.RideId))
 
   const args = [
     ...fitFilePaths,
@@ -266,7 +268,7 @@ async function generateOverlayMap(
   const scriptPath = path.join(process.cwd(), 'lib/python/generate_multiple_overlays.py')
   const filename = `overlay_${output.style}_${taskId}.html`
   const outputPath = path.join(tempDir, filename)
-  const fitFilePaths = processedActivities.map((activity) => path.join(tempDir, `${activity.RideId}.fit`))
+  const fitFilePaths = processedActivities.map((activity) => getFitFilePath(activity.RideId))
   const args = [...fitFilePaths, outputPath, output.style]
 
   try {

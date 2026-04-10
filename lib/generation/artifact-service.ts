@@ -25,6 +25,25 @@ export function getArtifactPath(filename: string): string {
   return path.join(getTempDir(), filename)
 }
 
+export function getFitFilePath(rideId: number): string {
+  return path.join(getTempDir(), `${rideId}.fit`)
+}
+
+export function hasUsableFitFile(rideId: number): boolean {
+  const filePath = getFitFilePath(rideId)
+
+  if (!existsSync(filePath)) {
+    return false
+  }
+
+  try {
+    return statSync(filePath).size > 0
+  } catch (error) {
+    console.error(`检查 FIT 文件失败: ${rideId}.fit`, error)
+    return false
+  }
+}
+
 export function cleanupExpiredFiles(maxAgeMs: number = FILE_TTL_MS) {
   const tempDir = getTempDir()
 
@@ -42,6 +61,10 @@ export function cleanupExpiredFiles(maxAgeMs: number = FILE_TTL_MS) {
       try {
         const stats = statSync(filePath)
         if (stats.isDirectory()) {
+          continue
+        }
+
+        if (path.extname(file).toLowerCase() === '.fit') {
           continue
         }
 
@@ -65,7 +88,7 @@ export function cleanupFitFiles(rideIds: number[]) {
   }
 
   for (const rideId of rideIds) {
-    const filePath = path.join(tempDir, `${rideId}.fit`)
+    const filePath = getFitFilePath(rideId)
 
     try {
       if (existsSync(filePath)) {
