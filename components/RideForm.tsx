@@ -4,6 +4,14 @@ import React from 'react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { TrackSettings } from '@/components/TrackSettings'
+import {
+  syncRequestCredentials,
+  updateRequestCombinedMap,
+  updateRequestOverlayMap,
+  updateRequestPassword,
+  updateRequestUsername,
+  updateRequestYear,
+} from '@/lib/generation/request-form'
 import { createInitialTaskRequest } from '@/lib/generation/request'
 import type { GenerationTaskRequest } from '@/lib/generation/types'
 
@@ -31,23 +39,7 @@ export function RideForm({ onSubmit, loading }: RideFormProps) {
       const username = usernameInputRef.current?.value ?? ''
       const password = passwordInputRef.current?.value ?? ''
 
-      setFormData((prev) => {
-        if (
-          prev.credentials.username === username &&
-          prev.credentials.password === password
-        ) {
-          return prev
-        }
-
-        return {
-          ...prev,
-          credentials: {
-            ...prev.credentials,
-            username,
-            password,
-          },
-        }
-      })
+      setFormData((prev) => syncRequestCredentials(prev, username, password))
     }
 
     const timeoutId = window.setTimeout(syncAutofilledCredentials, 120)
@@ -87,13 +79,7 @@ export function RideForm({ onSubmit, loading }: RideFormProps) {
         onChange={(e) => {
           const username = e.currentTarget.value
 
-          setFormData((prev) => ({
-            ...prev,
-            credentials: {
-              ...prev.credentials,
-              username,
-            },
-          }))
+          setFormData((prev) => updateRequestUsername(prev, username))
         }}
         required
         disabled={loading}
@@ -110,13 +96,7 @@ export function RideForm({ onSubmit, loading }: RideFormProps) {
         onChange={(e) => {
           const password = e.currentTarget.value
 
-          setFormData((prev) => ({
-            ...prev,
-            credentials: {
-              ...prev.credentials,
-              password,
-            },
-          }))
+          setFormData((prev) => updateRequestPassword(prev, password))
         }}
         required
         disabled={loading}
@@ -129,12 +109,9 @@ export function RideForm({ onSubmit, loading }: RideFormProps) {
           onChange={(e) => {
             const yearValue = e.currentTarget.value
 
-            setFormData((prev) => ({
-              ...prev,
-              filters: {
-                year: yearValue === 'all' ? 'all' : Number(yearValue),
-              },
-            }))
+            setFormData((prev) =>
+              updateRequestYear(prev, yearValue === 'all' ? 'all' : Number(yearValue))
+            )
           }}
           disabled={loading}
           className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 disabled:cursor-not-allowed disabled:opacity-50"
@@ -152,22 +129,10 @@ export function RideForm({ onSubmit, loading }: RideFormProps) {
         combinedMap={formData.outputs.combinedMap}
         overlayMap={formData.outputs.overlayMap}
         onCombinedMapChange={(combinedMap) =>
-          setFormData((prev) => ({
-            ...prev,
-            outputs: {
-              ...prev.outputs,
-              combinedMap,
-            },
-          }))
+          setFormData((prev) => updateRequestCombinedMap(prev, combinedMap))
         }
         onOverlayMapChange={(overlayMap) =>
-          setFormData((prev) => ({
-            ...prev,
-            outputs: {
-              ...prev.outputs,
-              overlayMap,
-            },
-          }))
+          setFormData((prev) => updateRequestOverlayMap(prev, overlayMap))
         }
       />
 
