@@ -1,4 +1,10 @@
 import { extractActivityItems, mapActivityItem } from '@/lib/igpsport-activity'
+import {
+  buildIGPSPORTDownloadHeaders,
+  buildIGPSPORTHeaders,
+  extractSetCookieHeaders,
+  storeCookies,
+} from '@/lib/igpsport-auth'
 export type { Activity } from '@/lib/igpsport-types'
 import type { Activity } from '@/lib/igpsport-types'
 
@@ -13,14 +19,7 @@ export class IGPSPORTClient {
     try {
       const response = await fetch(loginUrl, {
         method: 'POST',
-        headers: {
-          'User-Agent':
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-          'Content-Type': 'application/x-www-form-urlencoded',
-          Accept: 'application/json, text/javascript, */*; q=0.01',
-          'X-Requested-With': 'XMLHttpRequest',
-          'Accept-Encoding': 'gzip, deflate',
-        },
+        headers: buildIGPSPORTHeaders(this.cookieJar),
         body: new URLSearchParams({
           username,
           password,
@@ -31,10 +30,7 @@ export class IGPSPORTClient {
       console.log('Login response status:', response.status)
 
       // 获取所有 Set-Cookie
-      const setCookieHeaders = response.headers.getSetCookie() ?
-        response.headers.getSetCookie() :
-        [response.headers.get('Set-Cookie') || '']
-
+      const setCookieHeaders = extractSetCookieHeaders(response)
       console.log('Set-Cookie headers count:', setCookieHeaders.length)
 
       if (setCookieHeaders.length === 0) {
@@ -43,13 +39,7 @@ export class IGPSPORTClient {
       }
 
       // 解析所有 Cookie
-      for (const cookie of setCookieHeaders) {
-        const cookieParts = cookie.split(';')[0]
-        const [name, value] = cookieParts.split('=')
-        if (name && value) {
-          this.cookieJar.set(name.trim(), value.trim())
-        }
-      }
+      storeCookies(this.cookieJar, setCookieHeaders)
 
       console.log('Total cookies in jar:', this.cookieJar.size)
 
@@ -60,33 +50,8 @@ export class IGPSPORTClient {
     }
   }
 
-  private getCookieString(): string {
-    const cookieString = Array.from(this.cookieJar.entries())
-      .map(([name, value]) => `${name}=${value}`)
-      .join('; ')
-
-    return cookieString
-  }
-
   private getHeaders() {
-    const cookieString = this.getCookieString()
-    
-    // 添加 Authorization 头（使用 loginToken）
-    const loginToken = this.cookieJar.get('loginToken')
-    const headers: Record<string, string> = {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-      'Content-Type': 'application/x-www-form-urlencoded',
-      Accept: 'application/json, text/javascript, */*; q=0.01',
-      'X-Requested-With': 'XMLHttpRequest',
-      'Accept-Encoding': 'gzip, deflate',
-      'Cookie': cookieString,
-    }
-    
-    if (loginToken) {
-      headers['Authorization'] = `Bearer ${loginToken}`
-    }
-
-    return headers
+    return buildIGPSPORTHeaders(this.cookieJar)
   }
 
   async getActivities(
@@ -187,9 +152,7 @@ export class IGPSPORTClient {
 
       const fitResponse = await fetch(fitUrl, {
         method: 'GET',
-        headers: {
-          'User-Agent': this.getHeaders()['User-Agent'],
-        },
+        headers: buildIGPSPORTDownloadHeaders(),
       })
 
       if (!fitResponse.ok) {
