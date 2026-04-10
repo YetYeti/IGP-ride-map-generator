@@ -12,6 +12,8 @@ import {
 import type { GenerationTask, GenerationTaskRequest } from '@/lib/generation/types'
 
 const POLL_INTERVAL_MS = 2000
+const MAX_POLL_INTERVAL_MS = 30000
+const POLL_BACKOFF_FACTOR = 2
 
 export function useGenerationTask() {
   const [task, setTask] = React.useState<GenerationTask | null>(null)
@@ -19,6 +21,7 @@ export function useGenerationTask() {
   const [isCreating, setIsCreating] = React.useState(false)
   const [, startTransition] = React.useTransition()
   const pollTimeoutRef = React.useRef<number | null>(null)
+  const consecutiveErrorsRef = React.useRef(0)
 
   const clearPollTimeout = React.useCallback(() => {
     if (pollTimeoutRef.current !== null) {
@@ -28,7 +31,11 @@ export function useGenerationTask() {
   }, [])
 
   const schedulePoll = React.useCallback((callback: () => void) => {
-    pollTimeoutRef.current = window.setTimeout(callback, POLL_INTERVAL_MS)
+    const delay = Math.min(
+      POLL_INTERVAL_MS * POLL_BACKOFF_FACTOR ** consecutiveErrorsRef.current,
+      MAX_POLL_INTERVAL_MS
+    )
+    pollTimeoutRef.current = window.setTimeout(callback, delay)
   }, [])
 
   React.useEffect(() => {
@@ -60,6 +67,8 @@ export function useGenerationTask() {
           setTask(nextTask)
         })
 
+        consecutiveErrorsRef.current = 0
+
         if (isTaskActive(nextTask.status)) {
           schedulePoll(pollTask)
         }
@@ -68,6 +77,7 @@ export function useGenerationTask() {
           return
         }
 
+        consecutiveErrorsRef.current += 1
         setError(getErrorMessage(pollError))
         schedulePoll(pollTask)
       }
@@ -83,6 +93,7 @@ export function useGenerationTask() {
 
   const submitTask = async (request: GenerationTaskRequest) => {
     clearPollTimeout()
+    consecutiveErrorsRef.current = 0
 
     setIsCreating(true)
     setError(null)
