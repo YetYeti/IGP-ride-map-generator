@@ -11,6 +11,8 @@ import fitparse
 import folium
 from branca.element import Element
 
+from fit_utils import print_progress, extract_gps_data
+
 # 常量
 TRACK_COLOR = "#F1532E"
 TRACK_WEIGHT = 2
@@ -77,32 +79,6 @@ MAP_TILES = {
         control=True,
     ).add_to(m),
 }
-
-
-def print_progress(message: str):
-    """输出进度信息到 stderr"""
-    print(f"PROGRESS: {message}", file=sys.stderr, flush=True)
-
-
-def extract_gps_data(fit_file_path: str) -> List[Tuple[float, float]]:
-    """从FIT文件提取GPS数据"""
-    try:
-        fit_file = fitparse.FitFile(fit_file_path)
-        gps_data = []
-
-        for record in fit_file.get_messages("record"):
-            lat = record.get_value("position_lat")
-            long = record.get_value("position_long")
-
-            if lat is not None and long is not None and lat != 0 and long != 0:
-                lat_deg = lat / (2**31) * 180
-                long_deg = long / (2**31) * 180
-                gps_data.append((lat_deg, long_deg))
-
-        return gps_data
-    except Exception as e:
-        print_progress(f"提取GPS数据失败 {os.path.basename(fit_file_path)}: {str(e)}")
-        return []
 
 
 def generate_overlay_map(
