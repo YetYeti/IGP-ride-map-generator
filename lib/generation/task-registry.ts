@@ -55,3 +55,14 @@ export function startTaskCleanupInterval(): void {
     global.__taskCleanupTimer.unref()
   }
 }
+
+export function getRunningTaskCount(): number {
+  const registry = getGenerationTaskRegistry()
+  let count = 0
+  for (const task of registry.values()) {
+    if (task.status === 'running' || task.status === 'queued') {
+      count++
+    }
+  }
+  return count
+}

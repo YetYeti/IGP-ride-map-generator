@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { parseGenerationTaskRequest } from '@/lib/generation/request'
 import {
   acceptedTaskResponse,
@@ -6,10 +6,19 @@ import {
   serverErrorResponse,
 } from '@/lib/generation/task-route'
 import { startTaskRun } from '@/lib/generation/task-runner'
-import { createTask } from '@/lib/generation/task-store'
+import { createTask, getRunningTaskCount } from '@/lib/generation/task-store'
+
+const MAX_CONCURRENT_TASKS = 3
 
 export async function POST(req: NextRequest) {
   try {
+    if (getRunningTaskCount() >= MAX_CONCURRENT_TASKS) {
+      return NextResponse.json(
+        { error: '当前任务过多，请稍后重试' },
+        { status: 429 }
+      )
+    }
+
     const body = await req.json()
     const { request, error } = parseGenerationTaskRequest(body)
 

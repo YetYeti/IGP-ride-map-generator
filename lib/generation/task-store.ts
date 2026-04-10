@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid'
 import {
   cloneTask,
   getGenerationTaskRegistry,
+  getRunningTaskCount,
   startTaskCleanupInterval,
 } from '@/lib/generation/task-registry'
 import {
@@ -24,6 +25,8 @@ import {
 
 const generationTasks = getGenerationTaskRegistry()
 startTaskCleanupInterval()
+
+export { getRunningTaskCount }
 
 export function createTask(): GenerationTask {
   const timestamp = createIsoTimestamp()
