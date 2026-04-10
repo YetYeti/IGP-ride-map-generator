@@ -1,11 +1,8 @@
 'use client'
 
 import React from 'react'
-import type {
-  CreateGenerationTaskResponse,
-  GenerationTask,
-  GenerationTaskRequest,
-} from '@/lib/generation/types'
+import { createGenerationTask, fetchGenerationTask } from '@/lib/generation/task-api'
+import type { GenerationTask, GenerationTaskRequest } from '@/lib/generation/types'
 
 const POLL_INTERVAL_MS = 2000
 
@@ -25,11 +22,9 @@ export function useGenerationTask() {
 
     const pollTask = async () => {
       try {
-        const response = await fetch(`/api/tasks/${task.id}`, {
-          cache: 'no-store',
-        })
+        const nextTask = await fetchGenerationTask(task.id)
 
-        if (response.status === 404) {
+        if (nextTask === null) {
           if (!cancelled) {
             setError('任务不存在或已过期')
             startTransition(() => {
@@ -45,16 +40,6 @@ export function useGenerationTask() {
             })
           }
           return
-        }
-
-        const nextTask = (await response.json()) as GenerationTask | { error?: string }
-
-        if (!response.ok || !('id' in nextTask)) {
-          throw new Error(
-            'error' in nextTask && typeof nextTask.error === 'string'
-              ? nextTask.error
-              : '获取任务状态失败'
-          )
         }
 
         if (cancelled) {
@@ -103,22 +88,10 @@ export function useGenerationTask() {
     })
 
     try {
-      const response = await fetch('/api/tasks', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(request),
-      })
-
-      const data = (await response.json()) as CreateGenerationTaskResponse & { error?: string }
-
-      if (!response.ok || !data.task) {
-        throw new Error(data.error ?? '创建任务失败')
-      }
+      const task = await createGenerationTask(request)
 
       startTransition(() => {
-        setTask(data.task)
+        setTask(task)
       })
     } catch (submitError: unknown) {
       setError(getErrorMessage(submitError))
