@@ -12,6 +12,21 @@ import type { Activity } from '@/lib/igpsport-types'
 export class IGPSPORTClient {
   private cookieJar: Map<string, string> = new Map()
 
+  private ensureLoggedIn() {
+    if (this.cookieJar.size === 0) {
+      throw new Error('未登录，请先调用 login 方法')
+    }
+  }
+
+  private hasEmptyResponseText(text: string, logMessage: string): boolean {
+    if (!text || text.trim().length === 0) {
+      console.error(logMessage)
+      return true
+    }
+
+    return false
+  }
+
   async login(username: string, password: string): Promise<void> {
     console.log('=== IGPSPORT Login ===')
 
@@ -58,9 +73,7 @@ export class IGPSPORTClient {
     pageIndex: number = 1,
     pageSize: number = 20
   ): Promise<Activity[]> {
-    if (this.cookieJar.size === 0) {
-      throw new Error('未登录，请先调用 login 方法')
-    }
+    this.ensureLoggedIn()
 
     const url = new URL('https://my.igpsport.com/Activity/ActivityList')
     url.searchParams.append('pageIndex', pageIndex.toString())
@@ -86,8 +99,7 @@ export class IGPSPORTClient {
       const text = await response.text()
       console.log('Activities response length:', text.length)
 
-      if (!text || text.trim().length === 0) {
-        console.error('Empty response from activities API')
+      if (this.hasEmptyResponseText(text, 'Empty response from activities API')) {
         return []
       }
 
@@ -110,9 +122,7 @@ export class IGPSPORTClient {
   }
 
   async downloadFitFile(rideId: number): Promise<Buffer> {
-    if (this.cookieJar.size === 0) {
-      throw new Error('未登录，请先调用 login 方法')
-    }
+    this.ensureLoggedIn()
 
     const fitJsonUrl = `https://prod.zh.igpsport.com/service/web-gateway/web-analyze/activity/getDownloadUrl/${rideId}`
 
@@ -133,8 +143,7 @@ export class IGPSPORTClient {
       const text = await jsonResponse.text()
       console.log('Download URL response length:', text.length)
 
-      if (!text || text.trim().length === 0) {
-        console.error('Empty response from download URL API')
+      if (this.hasEmptyResponseText(text, 'Empty response from download URL API')) {
         throw new Error(`活动 ${rideId} 的详细数据未找到（空响应）`)
       }
 
