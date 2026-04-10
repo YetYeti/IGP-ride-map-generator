@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid'
+import { cloneTask, getGenerationTaskRegistry } from '@/lib/generation/task-registry'
 import {
   appendTaskArtifact,
   appendTaskLogEntry,
@@ -17,15 +18,7 @@ import {
   type GenerationTaskStats,
 } from '@/lib/generation/types'
 
-declare global {
-  var __generationTasks: Map<string, GenerationTask> | undefined
-}
-
-const generationTasks = global.__generationTasks ?? new Map<string, GenerationTask>()
-
-if (!global.__generationTasks) {
-  global.__generationTasks = generationTasks
-}
+const generationTasks = getGenerationTaskRegistry()
 
 export function createTask(): GenerationTask {
   const timestamp = createIsoTimestamp()
@@ -153,8 +146,4 @@ function mutateTask(
   generationTasks.set(taskId, updatedTask)
 
   return cloneTask(updatedTask)
-}
-
-function cloneTask(task: GenerationTask): GenerationTask {
-  return structuredClone(task)
 }
