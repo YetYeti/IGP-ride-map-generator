@@ -1,8 +1,6 @@
 import { writeFileSync } from 'fs'
-import path from 'path'
 import { IGPSPORTClient, type Activity } from '@/lib/igpsport'
 import {
-  addTaskArtifact,
   appendTaskLog,
   configureTaskOutputs,
   getTask,
@@ -14,18 +12,15 @@ import {
   updateTaskStats,
 } from '@/lib/generation/task-store'
 import {
-  buildArtifactUrl,
   cleanupExpiredFiles,
   ensureTempDir,
   getFitFilePath,
   hasUsableFitFile,
 } from '@/lib/generation/artifact-service'
-import { executePythonScript } from '@/lib/generation/python-runner'
-import type {
-  CombinedMapOutputConfig,
-  GenerationTaskRequest,
-  OverlayMapOutputConfig,
-} from '@/lib/generation/types'
+import { getErrorMessage } from '@/lib/generation/python-result'
+import { generateCombinedMapArtifact } from '@/lib/generation/output-generators/combined-map'
+import { generateOverlayMapArtifact } from '@/lib/generation/output-generators/overlay-map'
+import type { GenerationTaskRequest } from '@/lib/generation/types'
 
 const BATCH_SIZE = 5
 
@@ -107,11 +102,16 @@ async function runTask(taskId: string, request: GenerationTaskRequest) {
     }
 
     if (request.outputs.overlayMap.enabled && processedActivities.length > 0) {
-      await generateOverlayMap(taskId, processedActivities, request.outputs.overlayMap, tempDir)
+      await generateOverlayMapArtifact(taskId, processedActivities, request.outputs.overlayMap, tempDir)
     }
 
     if (request.outputs.combinedMap.enabled && processedActivities.length > 0) {
-      await generateCombinedMap(taskId, processedActivities, request.outputs.combinedMap, tempDir)
+      await generateCombinedMapArtifact(
+        taskId,
+        processedActivities,
+        request.outputs.combinedMap,
+        tempDir
+      )
     }
 
     if (requestedArtifactCount > 0) {
@@ -182,137 +182,6 @@ async function downloadFitFiles(
   }
 }
 
-async function generateCombinedMap(
-  taskId: string,
-  processedActivities: Activity[],
-  output: CombinedMapOutputConfig,
-  tempDir: string
-) {
-  appendTaskLog(taskId, '正在生成轨迹合成图...', 'info')
-  updateTaskOutputProgress(taskId, 'combinedMap', {
-    status: 'running',
-    progress: 72,
-  })
-
-  const scriptPath = path.join(process.cwd(), 'lib/python/generate_combined_map.py')
-  const filename = `combined_map_${taskId}.png`
-  const outputPath = path.join(tempDir, filename)
-  const fitFilePaths = processedActivities.map((activity) => getFitFilePath(activity.RideId))
-
-  const args = [
-    ...fitFilePaths,
-    outputPath,
-    '--track-width',
-    output.trackWidth.toString(),
-    '--track-spacing',
-    output.trackSpacing.toString(),
-    '--columns',
-    output.columns.toString(),
-    '--track-padding',
-    output.trackPadding.toString(),
-  ]
-
-  try {
-    const { stdout } = await executePythonScript(scriptPath, args, (message) => {
-      appendTaskLog(taskId, message, 'info')
-    })
-    const pythonResult = parsePythonResult(stdout)
-
-    if (!pythonResult.success) {
-      appendTaskLog(taskId, `生成轨迹合成图失败: ${pythonResult.error}`, 'error')
-      updateTaskOutputProgress(taskId, 'combinedMap', {
-        status: 'failed',
-        progress: 72,
-      })
-      return
-    }
-
-    addTaskArtifact(taskId, {
-      kind: 'combined-map',
-      filename,
-      url: buildArtifactUrl(taskId, filename),
-      contentType: 'image/png',
-    })
-
-    appendTaskLog(
-      taskId,
-      `轨迹合成图已生成: ${filename} (${pythonResult.totalTracks ?? processedActivities.length} 个轨迹${pythonResult.gridSize ? `，${pythonResult.gridSize}` : ''})`,
-      'success'
-    )
-    updateTaskOutputProgress(taskId, 'combinedMap', {
-      status: 'completed',
-      progress: 100,
-    })
-    setTaskProgress(taskId, 85)
-  } catch (error: unknown) {
-    appendTaskLog(taskId, `生成轨迹合成图失败: ${getErrorMessage(error)}`, 'error')
-    updateTaskOutputProgress(taskId, 'combinedMap', {
-      status: 'failed',
-      progress: 72,
-    })
-  }
-}
-
-async function generateOverlayMap(
-  taskId: string,
-  processedActivities: Activity[],
-  output: OverlayMapOutputConfig,
-  tempDir: string
-) {
-  appendTaskLog(taskId, '正在生成轨迹叠加网页...', 'info')
-  updateTaskOutputProgress(taskId, 'overlayMap', {
-    status: 'running',
-    progress: 72,
-  })
-
-  const scriptPath = path.join(process.cwd(), 'lib/python/generate_multiple_overlays.py')
-  const filename = `overlay_${output.style}_${taskId}.html`
-  const outputPath = path.join(tempDir, filename)
-  const fitFilePaths = processedActivities.map((activity) => getFitFilePath(activity.RideId))
-  const args = [...fitFilePaths, outputPath, output.style]
-
-  try {
-    const { stdout } = await executePythonScript(scriptPath, args, (message) => {
-      appendTaskLog(taskId, message, 'info')
-    })
-    const pythonResult = parsePythonResult(stdout)
-
-    if (!pythonResult.success) {
-      appendTaskLog(taskId, `生成轨迹叠加网页失败: ${pythonResult.error}`, 'error')
-      updateTaskOutputProgress(taskId, 'overlayMap', {
-        status: 'failed',
-        progress: 72,
-      })
-      return
-    }
-
-    addTaskArtifact(taskId, {
-      kind: 'overlay-map',
-      filename,
-      url: buildArtifactUrl(taskId, filename),
-      contentType: 'text/html',
-      style: output.style,
-    })
-
-    appendTaskLog(
-      taskId,
-      `轨迹叠加网页已生成: ${filename} (${pythonResult.totalTracks ?? processedActivities.length} 个轨迹)`,
-      'success'
-    )
-    updateTaskOutputProgress(taskId, 'overlayMap', {
-      status: 'completed',
-      progress: 100,
-    })
-    setTaskProgress(taskId, 95)
-  } catch (error: unknown) {
-    appendTaskLog(taskId, `生成轨迹叠加网页失败: ${getErrorMessage(error)}`, 'error')
-    updateTaskOutputProgress(taskId, 'overlayMap', {
-      status: 'failed',
-      progress: 72,
-    })
-  }
-}
-
 function updateRequestedOutputsProgress(
   taskId: string,
   request: GenerationTaskRequest,
@@ -356,48 +225,6 @@ function filterActivitiesByYear(activities: Activity[], selectedYear: number | '
   return activities.filter((activity) => activity.start_time.getFullYear() === selectedYear)
 }
 
-function parsePythonResult(stdout: string): {
-  success: boolean
-  error?: string
-  totalTracks?: number
-  gridSize?: string
-} {
-  if (stdout.trim() === '') {
-    return {
-      success: false,
-      error: 'Python 脚本未返回结果',
-    }
-  }
-
-  try {
-    const parsed = JSON.parse(stdout) as Record<string, unknown>
-    const success = parsed.success === true
-    const error = typeof parsed.error === 'string' ? parsed.error : undefined
-    const totalTracks = typeof parsed.total_tracks === 'number' ? parsed.total_tracks : undefined
-    const gridSize = typeof parsed.grid_size === 'string' ? parsed.grid_size : undefined
-
-    return {
-      success,
-      error,
-      totalTracks,
-      gridSize,
-    }
-  } catch (error: unknown) {
-    return {
-      success: false,
-      error: `解析 Python 输出失败: ${getErrorMessage(error)}`,
-    }
-  }
-}
-
 function getRequestedArtifactCount(request: GenerationTaskRequest): number {
   return Number(request.outputs.combinedMap.enabled) + Number(request.outputs.overlayMap.enabled)
-}
-
-function getErrorMessage(error: unknown): string {
-  if (error instanceof Error) {
-    return error.message
-  }
-
-  return '未知错误'
 }
