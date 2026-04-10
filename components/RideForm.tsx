@@ -4,6 +4,7 @@ import React from 'react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { TrackSettings } from '@/components/TrackSettings'
+import { useCredentialAutofillSync } from '@/hooks/useCredentialAutofillSync'
 import {
   canSubmitRequest,
   getAvailableYears,
@@ -30,27 +31,15 @@ export function RideForm({ onSubmit, loading }: RideFormProps) {
   const usernameInputRef = React.useRef<HTMLInputElement | null>(null)
   const passwordInputRef = React.useRef<HTMLInputElement | null>(null)
 
-  React.useEffect(() => {
-    const syncAutofilledCredentials = () => {
-      const username = usernameInputRef.current?.value ?? ''
-      const password = passwordInputRef.current?.value ?? ''
-
-      setFormData((prev) => syncRequestCredentials(prev, username, password))
-    }
-
-    const timeoutId = window.setTimeout(syncAutofilledCredentials, 120)
-    const animationFrameId = window.requestAnimationFrame(syncAutofilledCredentials)
-
-    window.addEventListener('focus', syncAutofilledCredentials)
-    window.addEventListener('pageshow', syncAutofilledCredentials)
-
-    return () => {
-      window.clearTimeout(timeoutId)
-      window.cancelAnimationFrame(animationFrameId)
-      window.removeEventListener('focus', syncAutofilledCredentials)
-      window.removeEventListener('pageshow', syncAutofilledCredentials)
-    }
+  const handleAutofillSync = React.useCallback((username: string, password: string) => {
+    setFormData((prev) => syncRequestCredentials(prev, username, password))
   }, [])
+
+  useCredentialAutofillSync({
+    usernameInputRef,
+    passwordInputRef,
+    onSync: handleAutofillSync,
+  })
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
