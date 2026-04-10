@@ -1,10 +1,17 @@
-import { NextResponse } from 'next/server'
 import {
   deleteArtifactFile,
   getArtifactInfo,
   readArtifactFile,
 } from '@/lib/generation/artifact-service'
-import { getTask } from '@/lib/generation/task-store'
+import {
+  artifactFileResponse,
+  artifactNotFoundResponse,
+  artifactReadErrorResponse,
+  expiredArtifactResponse,
+  invalidArtifactFilenameResponse,
+  missingArtifactFileResponse,
+} from '@/lib/generation/artifact-route'
+import { getTaskOrNotFound } from '@/lib/generation/task-route'
 
 export async function GET(
   req: Request,
@@ -18,64 +25,37 @@ export async function GET(
     const { taskId, filename } = await params
 
     if (filename.includes('..') || filename.includes('/')) {
-      return NextResponse.json(
-        { error: '文件名无效' },
-        { status: 400 }
-      )
+      return invalidArtifactFilenameResponse()
     }
 
-    const task = getTask(taskId)
+    const { task, response } = getTaskOrNotFound(taskId)
+    if (response) {
+      return response
+    }
     if (!task) {
-      return NextResponse.json(
-        { error: '任务不存在' },
-        { status: 404 }
-      )
+      return artifactReadErrorResponse()
     }
 
     const artifact = task.artifacts.find((item) => item.filename === filename)
     if (!artifact) {
-      return NextResponse.json(
-        { error: '产物不存在' },
-        { status: 404 }
-      )
+      return artifactNotFoundResponse()
     }
 
     const artifactInfo = getArtifactInfo(filename)
     if (!artifactInfo.exists) {
-      return NextResponse.json(
-        { error: '文件不存在或已过期' },
-        { status: 404 }
-      )
+      return missingArtifactFileResponse()
     }
 
     if (artifactInfo.expired) {
       deleteArtifactFile(filename)
-      return NextResponse.json(
-        { error: '文件已过期（30分钟）' },
-        { status: 404 }
-      )
+      return expiredArtifactResponse()
     }
 
     const fileBuffer = readArtifactFile(filename)
-    const contentDisposition =
-      artifact.contentType === 'text/html' || artifact.contentType === 'image/png'
-        ? 'inline'
-        : `attachment; filename="${artifact.filename}"`
-
-    return new NextResponse(new Uint8Array(fileBuffer), {
-      status: 200,
-      headers: {
-        'Content-Type': artifact.contentType,
-        'Content-Disposition': contentDisposition,
-        'Cache-Control': 'no-store',
-      },
-    })
+    return artifactFileResponse(fileBuffer, artifact)
   } catch (error: unknown) {
     console.error('读取产物文件失败:', error)
 
-    return NextResponse.json(
-      { error: '读取文件失败' },
-      { status: 500 }
-    )
+    return artifactReadErrorResponse()
   }
 }
