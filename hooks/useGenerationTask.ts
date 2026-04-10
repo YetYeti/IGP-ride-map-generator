@@ -19,6 +19,17 @@ export function useGenerationTask() {
   const [, startTransition] = React.useTransition()
   const pollTimeoutRef = React.useRef<number | null>(null)
 
+  const clearPollTimeout = React.useCallback(() => {
+    if (pollTimeoutRef.current !== null) {
+      window.clearTimeout(pollTimeoutRef.current)
+      pollTimeoutRef.current = null
+    }
+  }, [])
+
+  const schedulePoll = React.useCallback((callback: () => void) => {
+    pollTimeoutRef.current = window.setTimeout(callback, POLL_INTERVAL_MS)
+  }, [])
+
   React.useEffect(() => {
     if (!task || isTaskTerminal(task.status)) {
       return
@@ -49,7 +60,7 @@ export function useGenerationTask() {
         })
 
         if (isTaskActive(nextTask.status)) {
-          pollTimeoutRef.current = window.setTimeout(pollTask, POLL_INTERVAL_MS)
+          schedulePoll(pollTask)
         }
       } catch (pollError: unknown) {
         if (cancelled) {
@@ -57,26 +68,20 @@ export function useGenerationTask() {
         }
 
         setError(getErrorMessage(pollError))
-        pollTimeoutRef.current = window.setTimeout(pollTask, POLL_INTERVAL_MS)
+        schedulePoll(pollTask)
       }
     }
 
-    pollTimeoutRef.current = window.setTimeout(pollTask, POLL_INTERVAL_MS)
+    schedulePoll(pollTask)
 
     return () => {
       cancelled = true
-      if (pollTimeoutRef.current !== null) {
-        window.clearTimeout(pollTimeoutRef.current)
-        pollTimeoutRef.current = null
-      }
+      clearPollTimeout()
     }
-  }, [task?.id, task?.status, startTransition])
+  }, [clearPollTimeout, schedulePoll, task?.id, task?.status, startTransition])
 
   const submitTask = async (request: GenerationTaskRequest) => {
-    if (pollTimeoutRef.current !== null) {
-      window.clearTimeout(pollTimeoutRef.current)
-      pollTimeoutRef.current = null
-    }
+    clearPollTimeout()
 
     setIsCreating(true)
     setError(null)
