@@ -1,10 +1,10 @@
 import { writeFileSync } from 'fs'
 import { getFitFilePath, hasUsableFitFile } from '@/lib/generation/artifact-service'
+import { updateRequestedOutputsProgress } from '@/lib/generation/output-progress'
 import { getErrorMessage } from '@/lib/generation/python-result'
 import {
   appendTaskLog,
   setTaskProgress,
-  updateTaskOutputProgress,
 } from '@/lib/generation/task-store'
 import type { GenerationTaskRequest } from '@/lib/generation/types'
 import type { Activity, IGPSPORTClient } from '@/lib/igpsport'
@@ -61,20 +61,5 @@ export async function downloadFitFilesForActivities(
       30 + (processedActivities.length / activities.length) * 28,
       'pending'
     )
-  }
-}
-
-function updateRequestedOutputsProgress(
-  taskId: string,
-  request: GenerationTaskRequest,
-  progress: number,
-  status: 'pending' | 'running'
-) {
-  if (request.outputs.combinedMap.enabled) {
-    updateTaskOutputProgress(taskId, 'combinedMap', { progress, status })
-  }
-
-  if (request.outputs.overlayMap.enabled) {
-    updateTaskOutputProgress(taskId, 'overlayMap', { progress, status })
   }
 }

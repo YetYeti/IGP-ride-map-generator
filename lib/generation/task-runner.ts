@@ -5,7 +5,6 @@ import {
   getTask,
   setTaskCompleted,
   setTaskFailed,
-  updateTaskOutputProgress,
   setTaskProgress,
   setTaskRunning,
   updateTaskStats,
@@ -15,6 +14,7 @@ import {
   ensureTempDir,
 } from '@/lib/generation/artifact-service'
 import { downloadFitFilesForActivities } from '@/lib/generation/fit-downloader'
+import { markRequestedOutputsFailed, updateRequestedOutputsProgress } from '@/lib/generation/output-progress'
 import { getErrorMessage } from '@/lib/generation/python-result'
 import { generateCombinedMapArtifact } from '@/lib/generation/output-generators/combined-map'
 import { generateOverlayMapArtifact } from '@/lib/generation/output-generators/overlay-map'
@@ -123,41 +123,6 @@ async function runTask(taskId: string, request: GenerationTaskRequest) {
 
   appendTaskLog(taskId, `成功生成${processedActivities.length}个骑行轨迹！`, 'success')
   setTaskCompleted(taskId)
-}
-
-function updateRequestedOutputsProgress(
-  taskId: string,
-  request: GenerationTaskRequest,
-  progress: number,
-  status: 'pending' | 'running'
-) {
-  if (request.outputs.combinedMap.enabled) {
-    updateTaskOutputProgress(taskId, 'combinedMap', { progress, status })
-  }
-
-  if (request.outputs.overlayMap.enabled) {
-    updateTaskOutputProgress(taskId, 'overlayMap', { progress, status })
-  }
-}
-
-function markRequestedOutputsFailed(
-  taskId: string,
-  request: GenerationTaskRequest,
-  progress: number
-) {
-  if (request.outputs.combinedMap.enabled) {
-    updateTaskOutputProgress(taskId, 'combinedMap', {
-      status: 'failed',
-      progress,
-    })
-  }
-
-  if (request.outputs.overlayMap.enabled) {
-    updateTaskOutputProgress(taskId, 'overlayMap', {
-      status: 'failed',
-      progress,
-    })
-  }
 }
 
 function filterActivitiesByYear(activities: Activity[], selectedYear: number | 'all'): Activity[] {
