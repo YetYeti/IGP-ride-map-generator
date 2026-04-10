@@ -5,8 +5,12 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { RideForm } from '@/components/RideForm'
 import { ResultPreview } from '@/components/ResultPreview'
 import { useGenerationTask } from '@/hooks/useGenerationTask'
-import { getLatestTaskMessage, getTaskStatusLabel } from '@/lib/generation/task-display'
-import type { GenerationLogEntry, GenerationTaskRequest } from '@/lib/generation/types'
+import {
+  getLatestTaskMessage,
+  getTaskStatusLabel,
+  getVisibleTaskLogs,
+} from '@/lib/generation/task-display'
+import type { GenerationTaskRequest } from '@/lib/generation/types'
 
 export default function Home() {
   const { task, error, loading, submitTask } = useGenerationTask()
@@ -15,23 +19,7 @@ export default function Home() {
     await submitTask(data)
   }
 
-  const logs = React.useMemo<GenerationLogEntry[]>(() => {
-    if (task) {
-      return task.logs
-    }
-
-    if (!error) {
-      return []
-    }
-
-    return [
-      {
-        timestamp: new Date().toLocaleTimeString('zh-CN'),
-        message: error,
-        level: 'error',
-      },
-    ]
-  }, [task, error])
+  const logs = React.useMemo(() => getVisibleTaskLogs(task, error), [task, error])
 
   const statusLabel = getTaskStatusLabel(task, loading)
   const latestMessage = getLatestTaskMessage(task, logs)
