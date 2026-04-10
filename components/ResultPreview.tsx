@@ -86,7 +86,7 @@ export function ResultPreview({ task }: ResultPreviewProps) {
       )}
 
       {combinedMaps.length > 0 && (
-        <section className="space-y-3 border-t border-gray-200 pt-6">
+        <section className={`space-y-3 ${overlayMaps.length > 0 ? 'border-t border-gray-200 pt-6' : ''}`}>
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-2xl font-semibold leading-none tracking-tight">轨迹合成图</h3>
             {combinedMaps.length === 1 && (
@@ -132,7 +132,7 @@ export function ResultPreview({ task }: ResultPreviewProps) {
       )}
 
       {posters.length > 0 && (
-        <section className="space-y-3 border-t border-gray-200 pt-6">
+        <section className={`space-y-3 ${(overlayMaps.length > 0 || combinedMaps.length > 0) ? 'border-t border-gray-200 pt-6' : ''}`}>
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-2xl font-semibold leading-none tracking-tight">轨迹海报</h3>
             {posters.length === 1 && (
