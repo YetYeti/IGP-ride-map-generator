@@ -6,6 +6,7 @@
     "dev": "lsof -ti:3000 | xargs kill -9 2>/dev/null; next dev",
     "dev:clean": "lsof -ti:3000 | xargs kill -9 2>/dev/null; echo '端口 3000 已清理'",
     "build": "next build",
+    "postbuild": "node scripts/copy-python-assets.js",
     "start": "next start",
     "lint": "next lint"
   },

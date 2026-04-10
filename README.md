@@ -154,7 +154,7 @@ cd /opt/igpsport
 npm run build
 ```
 
-构建成功后，会在 `.next/standalone` 目录生成独立运行文件。
+构建成功后，会在 `.next/standalone` 目录生成独立运行文件，并自动复制 `lib/python` 下的 Python 脚本与 `poster_themes` 资源到 standalone 运行目录。
 
 #### 5. 配置 systemd 服务
 
