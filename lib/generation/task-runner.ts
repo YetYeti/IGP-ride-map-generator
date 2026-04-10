@@ -3,8 +3,6 @@ import { collectFilteredActivities } from '@/lib/generation/activity-collection'
 import {
   appendTaskLog,
   configureTaskOutputs,
-  getTask,
-  setTaskCompleted,
   setTaskFailed,
   setTaskProgress,
   setTaskRunning,
@@ -12,9 +10,15 @@ import {
 } from '@/lib/generation/task-store'
 import { cleanupExpiredFiles, ensureTempDir } from '@/lib/generation/artifact-service'
 import { downloadFitFilesForActivities } from '@/lib/generation/fit-downloader'
-import { markRequestedOutputsFailed, updateRequestedOutputsProgress } from '@/lib/generation/output-progress'
+import { updateRequestedOutputsProgress } from '@/lib/generation/output-progress'
 import { getErrorMessage } from '@/lib/generation/python-result'
 import { generateCombinedMapArtifact } from '@/lib/generation/output-generators/combined-map'
+import {
+  completeTaskSuccessfully,
+  failIfNoArtifactsGenerated,
+  failIfNoProcessedActivities,
+  getRequestedArtifactCount,
+} from '@/lib/generation/task-outcome'
 import { generateOverlayMapArtifact } from '@/lib/generation/output-generators/overlay-map'
 import type { GenerationTaskRequest } from '@/lib/generation/types'
 
@@ -58,11 +62,7 @@ async function runTask(taskId: string, request: GenerationTaskRequest) {
   setTaskProgress(taskId, 70)
   updateRequestedOutputsProgress(taskId, request, 58, 'pending')
 
-  if (processedActivities.length === 0 && requestedArtifactCount > 0) {
-    const errorMessage = '没有可用于生成轨迹图的 FIT 文件'
-    appendTaskLog(taskId, errorMessage, 'error')
-    markRequestedOutputsFailed(taskId, request, 58)
-    setTaskFailed(taskId, errorMessage)
+  if (failIfNoProcessedActivities(taskId, request, processedActivities.length, requestedArtifactCount)) {
     return
   }
 
@@ -79,21 +79,9 @@ async function runTask(taskId: string, request: GenerationTaskRequest) {
     )
   }
 
-  if (requestedArtifactCount > 0) {
-    const task = getTask(taskId)
-    if (!task || task.artifacts.length === 0) {
-      const errorMessage = '未成功生成任何产物文件'
-      appendTaskLog(taskId, errorMessage, 'error')
-      markRequestedOutputsFailed(taskId, request, 90)
-      setTaskFailed(taskId, errorMessage)
-      return
-    }
+  if (failIfNoArtifactsGenerated(taskId, request, requestedArtifactCount)) {
+    return
   }
 
-  appendTaskLog(taskId, `成功生成${processedActivities.length}个骑行轨迹！`, 'success')
-  setTaskCompleted(taskId)
-}
-
-function getRequestedArtifactCount(request: GenerationTaskRequest): number {
-  return Number(request.outputs.combinedMap.enabled) + Number(request.outputs.overlayMap.enabled)
+  completeTaskSuccessfully(taskId, processedActivities.length)
 }
