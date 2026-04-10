@@ -76,29 +76,29 @@ export class IGPSPORTClient {
   ): Promise<Activity[]> {
     this.ensureLoggedIn()
 
-    try {
-      const text = await fetchIGPSPORTActivitiesPage(this.cookieJar, pageIndex, pageSize)
+    const text = await fetchIGPSPORTActivitiesPage(this.cookieJar, pageIndex, pageSize)
 
-      if (this.hasEmptyResponseText(text, 'Empty response from activities API')) {
-        return []
-      }
-
-      const result = JSON.parse(text)
-      const activitiesData = extractActivityItems(result)
-      console.log('Activities data length:', activitiesData.length)
-
-      if (activitiesData.length > 0) {
-        console.log('First activity keys:', Object.keys(activitiesData[0]))
-        console.log('First activity sample:', JSON.stringify(activitiesData[0], null, 2))
-      }
-
-      const activities = activitiesData.map(mapActivityItem)
-
-      return activities
-    } catch (error: unknown) {
-      logIGPSPORTError('Get activities error:', error)
+    if (this.hasEmptyResponseText(text, 'Empty response from activities API')) {
       return []
     }
+
+    let result: unknown
+    try {
+      result = JSON.parse(text)
+    } catch (error: unknown) {
+      logIGPSPORTError('Failed to parse activities JSON:', error)
+      throw new Error('活动列表数据解析失败')
+    }
+
+    const activitiesData = extractActivityItems(result)
+    console.log('Activities data length:', activitiesData.length)
+
+    if (activitiesData.length > 0) {
+      console.log('First activity keys:', Object.keys(activitiesData[0]))
+      console.log('First activity sample:', JSON.stringify(activitiesData[0], null, 2))
+    }
+
+    return activitiesData.map(mapActivityItem)
   }
 
   async downloadFitFile(rideId: number): Promise<Buffer> {
