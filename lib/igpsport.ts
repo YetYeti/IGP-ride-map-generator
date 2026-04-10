@@ -5,6 +5,7 @@ import {
   extractSetCookieHeaders,
   storeCookies,
 } from '@/lib/igpsport-auth'
+import { logIGPSPORTError } from '@/lib/igpsport-errors'
 export type { Activity } from '@/lib/igpsport-types'
 import type { Activity } from '@/lib/igpsport-types'
 
@@ -43,9 +44,8 @@ export class IGPSPORTClient {
 
       console.log('Total cookies in jar:', this.cookieJar.size)
 
-    } catch (error: any) {
-      console.error('Login error:', error)
-      console.error('Login error stack:', error.stack)
+    } catch (error: unknown) {
+      logIGPSPORTError('Login error:', error)
       throw error
     }
   }
@@ -103,9 +103,8 @@ export class IGPSPORTClient {
       const activities = activitiesData.map(mapActivityItem)
 
       return activities
-    } catch (error: any) {
-      console.error('Get activities error:', error)
-      console.error('Get activities error stack:', error.stack)
+    } catch (error: unknown) {
+      logIGPSPORTError('Get activities error:', error)
       return []
     }
   }
@@ -164,8 +163,8 @@ export class IGPSPORTClient {
       console.log('FIT file downloaded, size:', arrayBuffer.byteLength)
 
       return Buffer.from(arrayBuffer)
-    } catch (error: any) {
-      console.error('Download FIT file error:', error)
+    } catch (error: unknown) {
+      logIGPSPORTError('Download FIT file error:', error)
       throw error
     }
   }
