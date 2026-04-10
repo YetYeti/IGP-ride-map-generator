@@ -1,6 +1,11 @@
 import { v4 as uuidv4 } from 'uuid'
 import {
-  EMPTY_OUTPUT_PROGRESS,
+  clampProgress,
+  createConfiguredOutputsProgress,
+  createEmptyOutputsProgress,
+  createTaskLogEntry,
+} from '@/lib/generation/task-state'
+import {
   EMPTY_GENERATION_TASK_STATS,
   type GenerationArtifact,
   type GenerationLogLevel,
@@ -30,10 +35,7 @@ export function createTask(): GenerationTask {
     logs: [],
     artifacts: [],
     stats: { ...EMPTY_GENERATION_TASK_STATS },
-    outputsProgress: {
-      combinedMap: { ...EMPTY_OUTPUT_PROGRESS },
-      overlayMap: { ...EMPTY_OUTPUT_PROGRESS },
-    },
+    outputsProgress: createEmptyOutputsProgress(),
     error: null,
   }
 
@@ -75,7 +77,7 @@ export function setTaskFailed(taskId: string, error: string): GenerationTask | n
 export function setTaskProgress(taskId: string, progress: number): GenerationTask | null {
   return mutateTask(taskId, (task) => ({
     ...task,
-    progress: Math.max(0, Math.min(100, Math.round(progress))),
+    progress: clampProgress(progress),
   }))
 }
 
@@ -88,17 +90,7 @@ export function appendTaskLog(
     ...task,
     logs: [
       ...task.logs,
-      {
-        timestamp: new Date().toLocaleString('zh-CN', {
-          timeZone: 'Asia/Shanghai',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-          hour12: false,
-        }),
-        message,
-        level,
-      },
+      createTaskLogEntry(message, level),
     ],
   }))
 }
@@ -141,26 +133,7 @@ export function configureTaskOutputs(
 ): GenerationTask | null {
   return mutateTask(taskId, (task) => ({
     ...task,
-    outputsProgress: {
-      combinedMap: outputs.combinedMap
-        ? {
-            enabled: true,
-            status: 'pending',
-            progress: 0,
-          }
-        : {
-            ...EMPTY_OUTPUT_PROGRESS,
-          },
-      overlayMap: outputs.overlayMap
-        ? {
-            enabled: true,
-            status: 'pending',
-            progress: 0,
-          }
-        : {
-            ...EMPTY_OUTPUT_PROGRESS,
-          },
-    },
+    outputsProgress: createConfiguredOutputsProgress(outputs),
   }))
 }
 
@@ -180,7 +153,7 @@ export function updateTaskOutputProgress(
         ...task.outputsProgress[output],
         ...('status' in updates && updates.status !== undefined ? { status: updates.status } : {}),
         ...('progress' in updates && updates.progress !== undefined
-          ? { progress: Math.max(0, Math.min(100, Math.round(updates.progress))) }
+          ? { progress: clampProgress(updates.progress) }
           : {}),
       },
     },
