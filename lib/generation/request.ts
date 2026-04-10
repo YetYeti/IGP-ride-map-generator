@@ -1,3 +1,10 @@
+import {
+  createInitialTaskRequest,
+  DEFAULT_COMBINED_MAP_OUTPUT,
+  DEFAULT_OVERLAY_MAP_OUTPUT,
+  LAYOUT_PRESETS,
+} from '@/lib/generation/request-defaults'
+import { isRecord, parseNumber, parseYear } from '@/lib/generation/request-parsing'
 import { MapStyles } from '@/lib/map-styles'
 import type {
   CombinedMapLayoutPreset,
@@ -6,36 +13,10 @@ import type {
   OverlayMapOutputConfig,
 } from '@/lib/generation/types'
 
-export const DEFAULT_COMBINED_MAP_OUTPUT: CombinedMapOutputConfig = {
-  enabled: true,
-  layoutPreset: 'standard',
-  trackWidth: 8,
-  trackSpacing: 300,
-  columns: 6,
-  trackPadding: 0.1,
-}
-
-export const DEFAULT_OVERLAY_MAP_OUTPUT: OverlayMapOutputConfig = {
-  enabled: true,
-  style: MapStyles.default,
-}
-
-const LAYOUT_PRESETS: CombinedMapLayoutPreset[] = ['compact', 'standard', 'loose', 'custom']
-
-export function createInitialTaskRequest(): GenerationTaskRequest {
-  return {
-    credentials: {
-      username: '',
-      password: '',
-    },
-    filters: {
-      year: 'all',
-    },
-    outputs: {
-      combinedMap: { ...DEFAULT_COMBINED_MAP_OUTPUT },
-      overlayMap: { ...DEFAULT_OVERLAY_MAP_OUTPUT },
-    },
-  }
+export {
+  createInitialTaskRequest,
+  DEFAULT_COMBINED_MAP_OUTPUT,
+  DEFAULT_OVERLAY_MAP_OUTPUT,
 }
 
 export function parseGenerationTaskRequest(body: unknown): {
@@ -104,18 +85,6 @@ export function parseGenerationTaskRequest(body: unknown): {
   return { request: initialRequest }
 }
 
-function parseYear(value: unknown): number | 'all' | null {
-  if (value === undefined || value === 'all') {
-    return 'all'
-  }
-
-  if (typeof value === 'number' && Number.isInteger(value) && value > 2000 && value < 3000) {
-    return value
-  }
-
-  return null
-}
-
 function parseCombinedMapOutput(value: unknown): CombinedMapOutputConfig | null {
   if (value === undefined) {
     return { ...DEFAULT_COMBINED_MAP_OUTPUT }
@@ -171,26 +140,10 @@ function parseOverlayMapOutput(value: unknown): OverlayMapOutputConfig | null {
   }
 }
 
-function parseNumber(value: unknown, fallback: number): number | null {
-  if (value === undefined) {
-    return fallback
-  }
-
-  if (typeof value !== 'number' || Number.isNaN(value) || !Number.isFinite(value)) {
-    return null
-  }
-
-  return value
-}
-
 function isMapStyle(value: unknown): value is OverlayMapOutputConfig['style'] {
   return typeof value === 'string' && value in MapStyles
 }
 
 function isLayoutPreset(value: unknown): value is CombinedMapLayoutPreset {
   return typeof value === 'string' && LAYOUT_PRESETS.includes(value as CombinedMapLayoutPreset)
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
 }
