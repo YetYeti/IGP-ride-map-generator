@@ -45,6 +45,7 @@ export class IGPSPORTClient {
           password,
         }),
         redirect: 'manual' as RequestRedirect,
+        signal: AbortSignal.timeout(30_000),
       })
 
       console.log('Login response status:', response.status)

@@ -3,6 +3,8 @@ import {
   buildIGPSPORTHeaders,
 } from '@/lib/igpsport-auth'
 
+const REQUEST_TIMEOUT_MS = 30_000
+
 export async function fetchIGPSPORTActivitiesPage(
   cookieJar: Map<string, string>,
   pageIndex: number,
@@ -19,6 +21,7 @@ export async function fetchIGPSPORTActivitiesPage(
   const response = await fetch(url.toString(), {
     method: 'GET',
     headers: buildIGPSPORTHeaders(cookieJar),
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   })
 
   console.log('Activities response status:', response.status)
@@ -44,6 +47,7 @@ export async function fetchIGPSPORTFitDownloadUrl(
   const response = await fetch(fitJsonUrl, {
     method: 'GET',
     headers: buildIGPSPORTHeaders(cookieJar),
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   })
 
   if (!response.ok) {
@@ -61,6 +65,7 @@ export async function downloadIGPSPORTFitFile(fitUrl: string) {
   const response = await fetch(fitUrl, {
     method: 'GET',
     headers: buildIGPSPORTDownloadHeaders(),
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   })
 
   if (!response.ok) {
