@@ -10,6 +10,7 @@ import type {
   CombinedMapLayoutPreset,
   CombinedMapOutputConfig,
   OverlayMapOutputConfig,
+  PosterAspectRatio,
   PosterOutputConfig,
 } from '@/lib/generation/types'
 
@@ -78,9 +79,13 @@ export function parsePosterOutput(value: unknown): PosterOutputConfig | null {
   }
 
   const enabled = typeof value.enabled === 'boolean' ? value.enabled : DEFAULT_POSTER_OUTPUT.enabled
+  const aspectRatio = isPosterAspectRatio(value.aspectRatio)
+    ? value.aspectRatio
+    : DEFAULT_POSTER_OUTPUT.aspectRatio
 
   return {
     enabled,
+    aspectRatio,
   }
 }
 
@@ -90,4 +95,10 @@ function isMapStyle(value: unknown): value is OverlayMapOutputConfig['style'] {
 
 function isLayoutPreset(value: unknown): value is CombinedMapLayoutPreset {
   return typeof value === 'string' && LAYOUT_PRESETS.includes(value as CombinedMapLayoutPreset)
+}
+
+const VALID_ASPECT_RATIOS: PosterAspectRatio[] = ['9:16', '3:4', '1:1', '4:3', '16:9']
+
+function isPosterAspectRatio(value: unknown): value is PosterAspectRatio {
+  return typeof value === 'string' && VALID_ASPECT_RATIOS.includes(value as PosterAspectRatio)
 }

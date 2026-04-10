@@ -4,6 +4,7 @@ import type {
   CombinedMapOutputConfig,
   GenerationTaskRequest,
   OverlayMapOutputConfig,
+  PosterAspectRatio,
   PosterOutputConfig,
 } from '@/lib/generation/types'
 
@@ -23,7 +24,16 @@ export const DEFAULT_OVERLAY_MAP_OUTPUT: OverlayMapOutputConfig = {
 
 export const DEFAULT_POSTER_OUTPUT: PosterOutputConfig = {
   enabled: true,
+  aspectRatio: '9:16',
 }
+
+export const POSTER_ASPECT_RATIOS: { value: PosterAspectRatio; label: string }[] = [
+  { value: '9:16', label: '9:16（竖屏）' },
+  { value: '3:4', label: '3:4（竖屏）' },
+  { value: '1:1', label: '1:1（方形）' },
+  { value: '4:3', label: '4:3（横屏）' },
+  { value: '16:9', label: '16:9（横屏）' },
+]
 
 export const LAYOUT_PRESETS: CombinedMapLayoutPreset[] = ['compact', 'standard', 'loose', 'custom']
 

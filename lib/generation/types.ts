@@ -47,8 +47,11 @@ export interface OverlayMapOutputConfig {
   style: MapStyle
 }
 
+export type PosterAspectRatio = '9:16' | '3:4' | '1:1' | '4:3' | '16:9'
+
 export interface PosterOutputConfig {
   enabled: boolean
+  aspectRatio: PosterAspectRatio
 }
 
 export interface GenerationTaskRequest {

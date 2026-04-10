@@ -4,6 +4,7 @@ import React from 'react'
 import { CombinedMapLayoutSection } from '@/components/track-settings/CombinedMapLayoutSection'
 import { GenerationOptionsSection } from '@/components/track-settings/GenerationOptionsSection'
 import { OverlayMapStyleSection } from '@/components/track-settings/OverlayMapStyleSection'
+import { PosterAspectRatioSection } from '@/components/track-settings/PosterAspectRatioSection'
 import {
   applyCombinedMapLayoutPreset,
   type CombinedMapSettingField,
@@ -12,6 +13,7 @@ import {
   togglePoster,
   updateCombinedMapSetting,
   updateOverlayMapStyle,
+  updatePosterAspectRatio,
 } from '@/lib/generation/track-settings'
 import type {
   CombinedMapLayoutPreset,
@@ -68,6 +70,15 @@ export function TrackSettings({
         <OverlayMapStyleSection
           overlayMap={overlayMap}
           onStyleChange={(style) => onOverlayMapChange(updateOverlayMapStyle(overlayMap, style))}
+        />
+      )}
+
+      {poster.enabled && (
+        <PosterAspectRatioSection
+          poster={poster}
+          onAspectRatioChange={(aspectRatio) =>
+            onPosterChange(updatePosterAspectRatio(poster, aspectRatio))
+          }
         />
       )}
     </div>

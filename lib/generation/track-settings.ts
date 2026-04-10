@@ -2,6 +2,7 @@ import type {
   CombinedMapLayoutPreset,
   CombinedMapOutputConfig,
   OverlayMapOutputConfig,
+  PosterAspectRatio,
   PosterOutputConfig,
 } from '@/lib/generation/types'
 
@@ -153,5 +154,15 @@ export function togglePoster(poster: PosterOutputConfig): PosterOutputConfig {
   return {
     ...poster,
     enabled: !poster.enabled,
+  }
+}
+
+export function updatePosterAspectRatio(
+  poster: PosterOutputConfig,
+  aspectRatio: PosterAspectRatio
+): PosterOutputConfig {
+  return {
+    ...poster,
+    aspectRatio,
   }
 }

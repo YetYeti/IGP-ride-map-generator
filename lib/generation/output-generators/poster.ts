@@ -10,12 +10,27 @@ import {
   updateTaskOutputProgress,
 } from '@/lib/generation/task-store'
 import type { Activity } from '@/lib/igpsport'
+import type { PosterOutputConfig } from '@/lib/generation/types'
+
+const POSTER_BASE_SIZE = 9
+
+function posterDimensionsForAspectRatio(aspectRatio: PosterOutputConfig['aspectRatio']): {
+  width: number
+  height: number
+} {
+  const [w, h] = aspectRatio.split(':').map(Number)
+  if (w >= h) {
+    return { width: POSTER_BASE_SIZE, height: POSTER_BASE_SIZE * (h / w) }
+  }
+  return { width: POSTER_BASE_SIZE * (w / h), height: POSTER_BASE_SIZE }
+}
 
 export async function generatePosterArtifact(
   taskId: string,
   processedActivities: Activity[],
   tempDir: string,
-  gpsCachePath: string | null
+  gpsCachePath: string | null,
+  config: PosterOutputConfig
 ) {
   appendTaskLog(taskId, '正在生成轨迹海报...', 'info')
   updateTaskOutputProgress(taskId, 'poster', {
@@ -23,6 +38,7 @@ export async function generatePosterArtifact(
     progress: 5,
   })
 
+  const { width, height } = posterDimensionsForAspectRatio(config.aspectRatio)
   const scriptPath = path.join(process.cwd(), 'lib/python/generate_track_art_poster.py')
   const fitListPath = path.join(tempDir, `poster_fit_list_${taskId}.txt`)
   const outputPath = path.join(tempDir, `track_art_poster_${taskId}.png`)
@@ -31,7 +47,7 @@ export async function generatePosterArtifact(
   try {
     await fs.writeFile(fitListPath, `${fitFilePaths.join('\n')}\n`, 'utf-8')
 
-    const args = [fitListPath, outputPath]
+    const args = [fitListPath, outputPath, '--width', width.toString(), '--height', height.toString()]
 
     if (gpsCachePath) {
       args.push('--gps-cache', gpsCachePath)

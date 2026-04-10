@@ -39,7 +39,7 @@ export async function generateRequestedArtifacts(
 
   if (request.outputs.poster.enabled && processedActivities.length > 0) {
     jobs.push(
-      generatePosterArtifact(taskId, processedActivities, tempDir, gpsCachePath)
+      generatePosterArtifact(taskId, processedActivities, tempDir, gpsCachePath, request.outputs.poster)
     )
   }
 
