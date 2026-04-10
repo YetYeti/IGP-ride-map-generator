@@ -28,9 +28,9 @@ export async function generatePosterArtifact(
   const outputPath = path.join(tempDir, `track_art_poster_${taskId}.png`)
   const fitFilePaths = processedActivities.map((activity) => getFitFilePath(activity.RideId))
 
-  await fs.writeFile(fitListPath, `${fitFilePaths.join('\n')}\n`, 'utf-8')
-
   try {
+    await fs.writeFile(fitListPath, `${fitFilePaths.join('\n')}\n`, 'utf-8')
+
     const { stdout } = await executePythonScript(scriptPath, [fitListPath, outputPath], (message) => {
       appendTaskLog(taskId, message, 'info')
     })
