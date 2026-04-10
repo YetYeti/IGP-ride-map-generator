@@ -32,14 +32,18 @@ DEFAULT_PADDING = 0.1
 DEFAULT_QUERY_PADDING = 0.18
 DEFAULT_WIDTH = 9
 DEFAULT_HEIGHT = 16
-DEFAULT_THEME = 'warm_beige'
+DEFAULT_THEME = 'warm_beige_blue_water'
 DEFAULT_NETWORK_TYPE = 'bike'
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_INPUT_PATH = PROJECT_ROOT / 'public' / 'fit_files'
+DEFAULT_OUTPUT_DIR = PROJECT_ROOT / 'public' / 'outputs'
+DEFAULT_OUTPUT_FILENAME = 'track_art_poster.png'
 ROAD_FETCH_RETRIES = 3
 ROAD_FETCH_RETRY_DELAY = 2
 MAX_TILE_LON_SPAN = 0.5
 MAX_TILE_LAT_SPAN = 0.5
 CACHE_VERSION = 'v1'
-CACHE_ROOT = Path('cache/poster_osm')
+CACHE_ROOT = PROJECT_ROOT / 'cache' / 'poster_osm'
 CACHE_ROADS_DIR = CACHE_ROOT / 'roads'
 CACHE_FEATURES_DIR = CACHE_ROOT / 'features'
 THEMES_DIR = Path(__file__).with_name('poster_themes')
@@ -93,6 +97,19 @@ def build_output_path_with_theme(output_path: str, theme_name: str) -> str:
         return str(path)
 
     return str(path.with_name(f'{path.stem}_{theme_name}{path.suffix}'))
+
+
+def resolve_output_path(output_path: str) -> str:
+    """将输出参数解析为具体图片路径。"""
+    path = Path(output_path).expanduser()
+
+    if path.exists() and path.is_dir():
+        return str(path / DEFAULT_OUTPUT_FILENAME)
+
+    if path.suffix:
+        return str(path)
+
+    return str(path / DEFAULT_OUTPUT_FILENAME)
 
 
 def extract_gps_data(fit_file_path: str) -> List[Tuple[float, float]]:
@@ -500,6 +517,7 @@ def render_poster(
     """生成艺术地图海报。"""
     theme = THEMES[theme_name]
     themed_output_path = build_output_path_with_theme(output_path, theme_name)
+    Path(themed_output_path).expanduser().parent.mkdir(parents=True, exist_ok=True)
     raw_bbox = calculate_bounds(tracks)
     render_bbox = expand_bbox(raw_bbox, padding_ratio, width / height)
     effective_query_padding_ratio = max(query_padding_ratio, padding_ratio)
@@ -606,9 +624,16 @@ def main():
     parser = argparse.ArgumentParser(description='根据 FIT 轨迹生成艺术地图海报原型')
     parser.add_argument(
         'input_path',
-        help='FIT 输入路径，可传单个 .fit、包含 .fit 的目录，或 .txt 清单文件',
+        nargs='?',
+        default=str(DEFAULT_INPUT_PATH),
+        help='FIT 输入路径，默认使用 public/fit_files',
     )
-    parser.add_argument('output_path', help='输出图片路径')
+    parser.add_argument(
+        'output_path',
+        nargs='?',
+        default=str(DEFAULT_OUTPUT_DIR),
+        help='输出图片路径或目录，默认写入 public/outputs',
+    )
     parser.add_argument(
         '--theme',
         choices=sorted(THEMES.keys()),
@@ -652,6 +677,7 @@ def main():
 
     try:
         fit_files = resolve_fit_files(args.input_path)
+        resolved_output_path = resolve_output_path(args.output_path)
 
         if not fit_files:
             print(json.dumps({'success': False, 'error': '输入路径中没有可用的 FIT 文件'}, ensure_ascii=False))
@@ -667,7 +693,7 @@ def main():
         print_progress(f'成功提取 {len(tracks)} 条轨迹，准备绘制艺术地图...')
         result = render_poster(
             tracks=tracks,
-            output_path=args.output_path,
+            output_path=resolved_output_path,
             theme_name=args.theme,
             network_type=args.network_type,
             width=args.width,
