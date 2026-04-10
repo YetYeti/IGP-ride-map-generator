@@ -18,11 +18,11 @@ export const DEFAULT_COMBINED_MAP_OUTPUT: CombinedMapOutputConfig = {
 
 export const DEFAULT_OVERLAY_MAP_OUTPUT: OverlayMapOutputConfig = {
   enabled: true,
-  style: MapStyles.default,
+  style: MapStyles.cartodb_positron_nolabels,
 }
 
 export const DEFAULT_POSTER_OUTPUT: PosterOutputConfig = {
-  enabled: false,
+  enabled: true,
 }
 
 export const LAYOUT_PRESETS: CombinedMapLayoutPreset[] = ['compact', 'standard', 'loose', 'custom']
