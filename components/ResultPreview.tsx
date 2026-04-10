@@ -24,16 +24,21 @@ export function ResultPreview({ task }: ResultPreviewProps) {
     () => getArtifactsByKind(task, 'overlay-map'),
     [task]
   )
+  const posters = React.useMemo(
+    () => getArtifactsByKind(task, 'poster'),
+    [task]
+  )
 
   React.useEffect(() => {
-    if (combinedMaps.length > 0) {
-      combinedMaps.forEach((map) => {
-        preloadImage(map.url, (url, loaded) => {
+    const imageArtifacts = [...combinedMaps, ...posters]
+    if (imageArtifacts.length > 0) {
+      imageArtifacts.forEach((artifact) => {
+        preloadImage(artifact.url, (url, loaded) => {
           setPreviewImages((prev) => ({ ...prev, [url]: loaded }))
         })
       })
     }
-  }, [combinedMaps])
+  }, [combinedMaps, posters])
 
   if (!task || task.artifacts.length === 0) {
     return null
@@ -112,6 +117,52 @@ export function ResultPreview({ task }: ResultPreviewProps) {
               )}
 
               {combinedMaps.length > 1 && (
+                <div className="flex justify-end">
+                  <Button
+                    size="sm"
+                    onClick={() => downloadArtifactFile(item.url, item.filename)}
+                  >
+                    下载
+                  </Button>
+                </div>
+              )}
+            </div>
+          ))}
+        </section>
+      )}
+
+      {posters.length > 0 && (
+        <section className="space-y-3 border-t border-gray-200 pt-6">
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="text-2xl font-semibold leading-none tracking-tight">轨迹海报</h3>
+            {posters.length === 1 && (
+              <Button
+                size="sm"
+                onClick={() => downloadArtifactFile(posters[0].url, posters[0].filename)}
+              >
+                下载
+              </Button>
+            )}
+          </div>
+
+          {posters.map((item, index) => (
+            <div key={index} className="space-y-2">
+              {previewImages[item.url] ? (
+                <img
+                  src={item.url}
+                  alt={item.filename}
+                  className="h-auto w-full rounded-lg object-contain"
+                />
+              ) : (
+                <div className="flex h-[400px] w-full items-center justify-center bg-gray-50">
+                  <div className="text-center text-gray-500">
+                    <div>加载中...</div>
+                    <div className="mt-2 text-xs">{item.filename}</div>
+                  </div>
+                </div>
+              )}
+
+              {posters.length > 1 && (
                 <div className="flex justify-end">
                   <Button
                     size="sm"

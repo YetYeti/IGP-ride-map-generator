@@ -12,6 +12,7 @@ import {
   updateRequestCombinedMap,
   updateRequestOverlayMap,
   updateRequestPassword,
+  updateRequestPoster,
   updateRequestUsername,
   updateRequestYear,
 } from '@/lib/generation/request-form'
@@ -110,11 +111,15 @@ export function RideForm({ onSubmit, loading }: RideFormProps) {
       <TrackSettings
         combinedMap={formData.outputs.combinedMap}
         overlayMap={formData.outputs.overlayMap}
+        poster={formData.outputs.poster}
         onCombinedMapChange={(combinedMap) =>
           setFormData((prev) => updateRequestCombinedMap(prev, combinedMap))
         }
         onOverlayMapChange={(overlayMap) =>
           setFormData((prev) => updateRequestOverlayMap(prev, overlayMap))
+        }
+        onPosterChange={(poster) =>
+          setFormData((prev) => updateRequestPoster(prev, poster))
         }
       />
 

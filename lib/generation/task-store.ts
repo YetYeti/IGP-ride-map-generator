@@ -105,6 +105,7 @@ export function configureTaskOutputs(
   outputs: {
     combinedMap: boolean
     overlayMap: boolean
+    poster: boolean
   }
 ): GenerationTask | null {
   return patchTask(taskId, {
@@ -114,7 +115,7 @@ export function configureTaskOutputs(
 
 export function updateTaskOutputProgress(
   taskId: string,
-  output: 'combinedMap' | 'overlayMap',
+  output: 'combinedMap' | 'overlayMap' | 'poster',
   updates: {
     status?: GenerationOutputStatus
     progress?: number

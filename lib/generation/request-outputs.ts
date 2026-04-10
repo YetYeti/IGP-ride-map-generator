@@ -1,6 +1,7 @@
 import {
   DEFAULT_COMBINED_MAP_OUTPUT,
   DEFAULT_OVERLAY_MAP_OUTPUT,
+  DEFAULT_POSTER_OUTPUT,
   LAYOUT_PRESETS,
 } from '@/lib/generation/request-defaults'
 import { isRecord, parseNumber } from '@/lib/generation/request-parsing'
@@ -9,6 +10,7 @@ import type {
   CombinedMapLayoutPreset,
   CombinedMapOutputConfig,
   OverlayMapOutputConfig,
+  PosterOutputConfig,
 } from '@/lib/generation/types'
 
 export function parseCombinedMapOutput(value: unknown): CombinedMapOutputConfig | null {
@@ -63,6 +65,22 @@ export function parseOverlayMapOutput(value: unknown): OverlayMapOutputConfig | 
   return {
     enabled,
     style,
+  }
+}
+
+export function parsePosterOutput(value: unknown): PosterOutputConfig | null {
+  if (value === undefined) {
+    return { ...DEFAULT_POSTER_OUTPUT }
+  }
+
+  if (!isRecord(value)) {
+    return null
+  }
+
+  const enabled = typeof value.enabled === 'boolean' ? value.enabled : DEFAULT_POSTER_OUTPUT.enabled
+
+  return {
+    enabled,
   }
 }
 

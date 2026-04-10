@@ -17,16 +17,19 @@ export function createEmptyOutputsProgress(): GenerationTaskOutputsProgress {
   return {
     combinedMap: { ...EMPTY_OUTPUT_PROGRESS },
     overlayMap: { ...EMPTY_OUTPUT_PROGRESS },
+    poster: { ...EMPTY_OUTPUT_PROGRESS },
   }
 }
 
 export function createConfiguredOutputsProgress(outputs: {
   combinedMap: boolean
   overlayMap: boolean
+  poster: boolean
 }): GenerationTaskOutputsProgress {
   return {
     combinedMap: createOutputProgress(outputs.combinedMap),
     overlayMap: createOutputProgress(outputs.overlayMap),
+    poster: createOutputProgress(outputs.poster),
   }
 }
 
@@ -79,7 +82,7 @@ export function appendTaskArtifact(
 
 export function updateOutputProgressState(
   task: GenerationTask,
-  output: 'combinedMap' | 'overlayMap',
+  output: 'combinedMap' | 'overlayMap' | 'poster',
   updates: {
     status?: GenerationOutputStatus
     progress?: number

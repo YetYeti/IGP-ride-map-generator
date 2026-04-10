@@ -2,6 +2,7 @@ import type {
   CombinedMapLayoutPreset,
   CombinedMapOutputConfig,
   OverlayMapOutputConfig,
+  PosterOutputConfig,
 } from '@/lib/generation/types'
 
 export type CombinedMapSettingField = 'trackWidth' | 'trackSpacing' | 'columns' | 'trackPadding'
@@ -145,5 +146,12 @@ export function updateOverlayMapStyle(
   return {
     ...overlayMap,
     style,
+  }
+}
+
+export function togglePoster(poster: PosterOutputConfig): PosterOutputConfig {
+  return {
+    ...poster,
+    enabled: !poster.enabled,
   }
 }

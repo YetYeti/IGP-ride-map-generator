@@ -40,6 +40,7 @@ async function runTask(taskId: string, request: GenerationTaskRequest) {
   configureTaskOutputs(taskId, {
     combinedMap: request.outputs.combinedMap.enabled,
     overlayMap: request.outputs.overlayMap.enabled,
+    poster: request.outputs.poster.enabled,
   })
   appendTaskLog(taskId, '开始生成轨迹...', 'info')
   updateRequestedOutputsProgress(taskId, request, 5, 'pending')

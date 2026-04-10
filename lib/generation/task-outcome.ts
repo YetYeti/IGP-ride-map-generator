@@ -3,7 +3,11 @@ import { markRequestedOutputsFailed } from '@/lib/generation/output-progress'
 import type { GenerationTaskRequest } from '@/lib/generation/types'
 
 export function getRequestedArtifactCount(request: GenerationTaskRequest): number {
-  return Number(request.outputs.combinedMap.enabled) + Number(request.outputs.overlayMap.enabled)
+  return (
+    Number(request.outputs.combinedMap.enabled) +
+    Number(request.outputs.overlayMap.enabled) +
+    Number(request.outputs.poster.enabled)
+  )
 }
 
 export function failIfNoProcessedActivities(

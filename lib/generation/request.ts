@@ -2,8 +2,13 @@ import {
   createInitialTaskRequest,
   DEFAULT_COMBINED_MAP_OUTPUT,
   DEFAULT_OVERLAY_MAP_OUTPUT,
+  DEFAULT_POSTER_OUTPUT,
 } from '@/lib/generation/request-defaults'
-import { parseCombinedMapOutput, parseOverlayMapOutput } from '@/lib/generation/request-outputs'
+import {
+  parseCombinedMapOutput,
+  parseOverlayMapOutput,
+  parsePosterOutput,
+} from '@/lib/generation/request-outputs'
 import { isRecord, parseYear } from '@/lib/generation/request-parsing'
 import type { GenerationTaskRequest } from '@/lib/generation/types'
 
@@ -11,6 +16,7 @@ export {
   createInitialTaskRequest,
   DEFAULT_COMBINED_MAP_OUTPUT,
   DEFAULT_OVERLAY_MAP_OUTPUT,
+  DEFAULT_POSTER_OUTPUT,
 }
 
 export function parseGenerationTaskRequest(body: unknown): {
@@ -67,8 +73,14 @@ export function parseGenerationTaskRequest(body: unknown): {
       return { error: 'overlayMap 配置无效' }
     }
 
+    const poster = parsePosterOutput(body.outputs.poster)
+    if (!poster) {
+      return { error: 'poster 配置无效' }
+    }
+
     initialRequest.outputs.combinedMap = combinedMap
     initialRequest.outputs.overlayMap = overlayMap
+    initialRequest.outputs.poster = poster
   }
 
   initialRequest.credentials = {

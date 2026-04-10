@@ -3,20 +3,25 @@
 import type {
   CombinedMapOutputConfig,
   OverlayMapOutputConfig,
+  PosterOutputConfig,
 } from '@/lib/generation/types'
 
 interface GenerationOptionsSectionProps {
   combinedMap: CombinedMapOutputConfig
   overlayMap: OverlayMapOutputConfig
+  poster: PosterOutputConfig
   onToggleCombinedMap: () => void
   onToggleOverlayMap: () => void
+  onTogglePoster: () => void
 }
 
 export function GenerationOptionsSection({
   combinedMap,
   overlayMap,
+  poster,
   onToggleCombinedMap,
   onToggleOverlayMap,
+  onTogglePoster,
 }: GenerationOptionsSectionProps) {
   return (
     <div className="rounded-lg border p-4">
@@ -40,6 +45,16 @@ export function GenerationOptionsSection({
             className="h-4 w-4"
           />
           <span className="text-sm">生成轨迹合成图</span>
+        </label>
+
+        <label className="flex cursor-pointer items-center space-x-2">
+          <input
+            type="checkbox"
+            checked={poster.enabled}
+            onChange={onTogglePoster}
+            className="h-4 w-4"
+          />
+          <span className="text-sm">生成海报</span>
         </label>
       </div>
     </div>

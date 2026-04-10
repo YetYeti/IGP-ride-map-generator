@@ -1,5 +1,6 @@
 import { generateCombinedMapArtifact } from '@/lib/generation/output-generators/combined-map'
 import { generateOverlayMapArtifact } from '@/lib/generation/output-generators/overlay-map'
+import { generatePosterArtifact } from '@/lib/generation/output-generators/poster'
 import type { GenerationTaskRequest } from '@/lib/generation/types'
 import type { Activity } from '@/lib/igpsport'
 
@@ -20,5 +21,9 @@ export async function generateRequestedArtifacts(
       request.outputs.combinedMap,
       tempDir
     )
+  }
+
+  if (request.outputs.poster.enabled && processedActivities.length > 0) {
+    await generatePosterArtifact(taskId, processedActivities, tempDir)
   }
 }

@@ -14,6 +14,10 @@ export function updateRequestedOutputsProgress(
   if (request.outputs.overlayMap.enabled) {
     updateTaskOutputProgress(taskId, 'overlayMap', { progress, status })
   }
+
+  if (request.outputs.poster.enabled) {
+    updateTaskOutputProgress(taskId, 'poster', { progress, status })
+  }
 }
 
 export function markRequestedOutputsFailed(
@@ -30,6 +34,13 @@ export function markRequestedOutputsFailed(
 
   if (request.outputs.overlayMap.enabled) {
     updateTaskOutputProgress(taskId, 'overlayMap', {
+      status: 'failed',
+      progress,
+    })
+  }
+
+  if (request.outputs.poster.enabled) {
+    updateTaskOutputProgress(taskId, 'poster', {
       status: 'failed',
       progress,
     })

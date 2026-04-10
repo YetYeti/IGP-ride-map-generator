@@ -2,6 +2,7 @@ import type {
   CombinedMapOutputConfig,
   GenerationTaskRequest,
   OverlayMapOutputConfig,
+  PosterOutputConfig,
 } from '@/lib/generation/types'
 
 export function syncRequestCredentials(
@@ -86,6 +87,19 @@ export function updateRequestOverlayMap(
     outputs: {
       ...request.outputs,
       overlayMap,
+    },
+  }
+}
+
+export function updateRequestPoster(
+  request: GenerationTaskRequest,
+  poster: PosterOutputConfig
+): GenerationTaskRequest {
+  return {
+    ...request,
+    outputs: {
+      ...request.outputs,
+      poster,
     },
   }
 }

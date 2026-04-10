@@ -4,6 +4,7 @@ import type {
   CombinedMapOutputConfig,
   GenerationTaskRequest,
   OverlayMapOutputConfig,
+  PosterOutputConfig,
 } from '@/lib/generation/types'
 
 export const DEFAULT_COMBINED_MAP_OUTPUT: CombinedMapOutputConfig = {
@@ -20,6 +21,10 @@ export const DEFAULT_OVERLAY_MAP_OUTPUT: OverlayMapOutputConfig = {
   style: MapStyles.default,
 }
 
+export const DEFAULT_POSTER_OUTPUT: PosterOutputConfig = {
+  enabled: false,
+}
+
 export const LAYOUT_PRESETS: CombinedMapLayoutPreset[] = ['compact', 'standard', 'loose', 'custom']
 
 export function createInitialTaskRequest(): GenerationTaskRequest {
@@ -34,6 +39,7 @@ export function createInitialTaskRequest(): GenerationTaskRequest {
     outputs: {
       combinedMap: { ...DEFAULT_COMBINED_MAP_OUTPUT },
       overlayMap: { ...DEFAULT_OVERLAY_MAP_OUTPUT },
+      poster: { ...DEFAULT_POSTER_OUTPUT },
     },
   }
 }

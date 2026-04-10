@@ -30,6 +30,7 @@ export interface GenerationOutputProgress {
 export interface GenerationTaskOutputsProgress {
   combinedMap: GenerationOutputProgress
   overlayMap: GenerationOutputProgress
+  poster: GenerationOutputProgress
 }
 
 export interface CombinedMapOutputConfig {
@@ -46,6 +47,10 @@ export interface OverlayMapOutputConfig {
   style: MapStyle
 }
 
+export interface PosterOutputConfig {
+  enabled: boolean
+}
+
 export interface GenerationTaskRequest {
   credentials: {
     username: string
@@ -57,10 +62,11 @@ export interface GenerationTaskRequest {
   outputs: {
     combinedMap: CombinedMapOutputConfig
     overlayMap: OverlayMapOutputConfig
+    poster: PosterOutputConfig
   }
 }
 
-export type GenerationArtifactKind = 'combined-map' | 'overlay-map'
+export type GenerationArtifactKind = 'combined-map' | 'overlay-map' | 'poster'
 
 export interface GenerationArtifact {
   kind: GenerationArtifactKind
