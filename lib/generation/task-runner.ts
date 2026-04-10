@@ -12,14 +12,13 @@ import { cleanupExpiredFiles, ensureTempDir } from '@/lib/generation/artifact-se
 import { downloadFitFilesForActivities } from '@/lib/generation/fit-downloader'
 import { updateRequestedOutputsProgress } from '@/lib/generation/output-progress'
 import { getErrorMessage } from '@/lib/generation/python-result'
-import { generateCombinedMapArtifact } from '@/lib/generation/output-generators/combined-map'
+import { generateRequestedArtifacts } from '@/lib/generation/requested-artifacts'
 import {
   completeTaskSuccessfully,
   failIfNoArtifactsGenerated,
   failIfNoProcessedActivities,
   getRequestedArtifactCount,
 } from '@/lib/generation/task-outcome'
-import { generateOverlayMapArtifact } from '@/lib/generation/output-generators/overlay-map'
 import type { GenerationTaskRequest } from '@/lib/generation/types'
 
 export function startTaskRun(taskId: string, request: GenerationTaskRequest) {
@@ -66,18 +65,7 @@ async function runTask(taskId: string, request: GenerationTaskRequest) {
     return
   }
 
-  if (request.outputs.overlayMap.enabled && processedActivities.length > 0) {
-    await generateOverlayMapArtifact(taskId, processedActivities, request.outputs.overlayMap, tempDir)
-  }
-
-  if (request.outputs.combinedMap.enabled && processedActivities.length > 0) {
-    await generateCombinedMapArtifact(
-      taskId,
-      processedActivities,
-      request.outputs.combinedMap,
-      tempDir
-    )
-  }
+  await generateRequestedArtifacts(taskId, request, processedActivities, tempDir)
 
   if (failIfNoArtifactsGenerated(taskId, request, requestedArtifactCount)) {
     return
