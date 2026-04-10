@@ -1,51 +1,21 @@
 'use client'
 
 import React from 'react'
+import {
+  applyCombinedMapLayoutPreset,
+  COMBINED_MAP_LAYOUT_PRESETS,
+  type CombinedMapSettingField,
+  toggleCombinedMap,
+  toggleOverlayMap,
+  updateCombinedMapSetting,
+  updateOverlayMapStyle,
+} from '@/lib/generation/track-settings'
 import { MapStyleLabels } from '@/lib/map-styles'
 import type {
   CombinedMapLayoutPreset,
   CombinedMapOutputConfig,
   OverlayMapOutputConfig,
 } from '@/lib/generation/types'
-
-type CombinedMapSettingField = 'trackWidth' | 'trackSpacing' | 'columns' | 'trackPadding'
-
-const LAYOUT_PRESETS = {
-  compact: {
-    label: '紧凑布局',
-    description: '更多小图，但轨迹较小',
-    settings: {
-      trackWidth: 6,
-      trackSpacing: 100,
-      columns: 7,
-      trackPadding: 0.2,
-    },
-  },
-  standard: {
-    label: '标准布局',
-    description: '平衡效果',
-    settings: {
-      trackWidth: 8,
-      trackSpacing: 300,
-      columns: 6,
-      trackPadding: 0.1,
-    },
-  },
-  loose: {
-    label: '宽松布局',
-    description: '轨迹更清晰，但每页小图更少',
-    settings: {
-      trackWidth: 8,
-      trackSpacing: 500,
-      columns: 5,
-      trackPadding: 0.05,
-    },
-  },
-  custom: {
-    label: '自定义',
-    description: '手动设置参数',
-  },
-}
 
 interface TrackSettingsProps {
   combinedMap: CombinedMapOutputConfig
@@ -155,28 +125,11 @@ export function TrackSettings({
   ][]
 
   const handleCombinedMapSettingsChange = (field: CombinedMapSettingField, value: number) => {
-    onCombinedMapChange({
-      ...combinedMap,
-      [field]: value,
-    })
+    onCombinedMapChange(updateCombinedMapSetting(combinedMap, field, value))
   }
 
   const handleLayoutPresetChange = (preset: CombinedMapLayoutPreset) => {
-    if (preset === 'custom') {
-      onCombinedMapChange({
-        ...combinedMap,
-        layoutPreset: 'custom',
-      })
-    } else {
-      const presetConfig = LAYOUT_PRESETS[preset]
-      if (presetConfig && 'settings' in presetConfig) {
-        onCombinedMapChange({
-          ...combinedMap,
-          layoutPreset: preset,
-          ...presetConfig.settings,
-        })
-      }
-    }
+    onCombinedMapChange(applyCombinedMapLayoutPreset(combinedMap, preset))
   }
 
   return (
@@ -188,12 +141,7 @@ export function TrackSettings({
             <input
               type="checkbox"
               checked={overlayMap.enabled}
-              onChange={() =>
-                onOverlayMapChange({
-                  ...overlayMap,
-                  enabled: !overlayMap.enabled,
-                })
-              }
+              onChange={() => onOverlayMapChange(toggleOverlayMap(overlayMap))}
               className="h-4 w-4"
             />
             <span className="text-sm">生成轨迹叠加网页</span>
@@ -203,12 +151,7 @@ export function TrackSettings({
             <input
               type="checkbox"
               checked={combinedMap.enabled}
-              onChange={() =>
-                onCombinedMapChange({
-                  ...combinedMap,
-                  enabled: !combinedMap.enabled,
-                })
-              }
+              onChange={() => onCombinedMapChange(toggleCombinedMap(combinedMap))}
               className="h-4 w-4"
             />
             <span className="text-sm">生成轨迹合成图</span>
@@ -226,9 +169,9 @@ export function TrackSettings({
                 onChange={(e) => handleLayoutPresetChange(e.currentTarget.value as CombinedMapLayoutPreset)}
                 className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400"
               >
-                {(Object.entries(LAYOUT_PRESETS) as [
+                {(Object.entries(COMBINED_MAP_LAYOUT_PRESETS) as [
                   CombinedMapLayoutPreset,
-                  (typeof LAYOUT_PRESETS)[CombinedMapLayoutPreset],
+                  (typeof COMBINED_MAP_LAYOUT_PRESETS)[CombinedMapLayoutPreset],
                 ][]).map(([key, config]) => (
                   <option key={key} value={key}>
                     {config.label}
@@ -236,7 +179,7 @@ export function TrackSettings({
                 ))}
               </select>
               <p className="mt-2 text-xs text-gray-500">
-                {LAYOUT_PRESETS[combinedMap.layoutPreset].description}
+                {COMBINED_MAP_LAYOUT_PRESETS[combinedMap.layoutPreset].description}
               </p>
             </div>
 
@@ -289,10 +232,12 @@ export function TrackSettings({
           <select
             value={overlayMap.style}
             onChange={(e) =>
-              onOverlayMapChange({
-                ...overlayMap,
-                style: e.currentTarget.value as OverlayMapOutputConfig['style'],
-              })
+              onOverlayMapChange(
+                updateOverlayMapStyle(
+                  overlayMap,
+                  e.currentTarget.value as OverlayMapOutputConfig['style']
+                )
+              )
             }
             className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-400"
           >
