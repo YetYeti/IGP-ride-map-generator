@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getTask } from '@/lib/generation/task-store'
+import { getTaskOrNotFound, serverErrorResponse } from '@/lib/generation/task-route'
 
 export async function GET(
   req: Request,
@@ -7,22 +7,16 @@ export async function GET(
 ) {
   try {
     const { taskId } = await params
-    const task = getTask(taskId)
+    const { task, response } = getTaskOrNotFound(taskId)
 
-    if (!task) {
-      return NextResponse.json(
-        { error: '任务不存在' },
-        { status: 404 }
-      )
+    if (response) {
+      return response
     }
 
     return NextResponse.json(task)
   } catch (error: unknown) {
     console.error('获取任务失败:', error)
 
-    return NextResponse.json(
-      { error: '服务器错误' },
-      { status: 500 }
-    )
+    return serverErrorResponse()
   }
 }
