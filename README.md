@@ -11,8 +11,8 @@
 - 现代化响应式设计
 - 实时日志显示
 - 生成结果预览和下载
-- 临时文件30分钟自动过期
-- FIT 文件生成后立即清理
+- 生成产物30分钟自动过期
+- FIT 文件本地保留并自动复用
 
 ## 技术栈
 
@@ -111,7 +111,7 @@ sudo systemctl status nginx
 cd /opt
 sudo git clone <your-repository-url> igpsport
 
-# 创建临时文件目录
+# 创建文件存储目录
 sudo mkdir -p /var/lib/igpsport/temp
 ```
 
@@ -307,7 +307,8 @@ IGPSPORT_RIDE_MAP_VERCEL/
 │   ├── igpsport.service           # systemd 服务配置
 │   └── nginx.conf                # Nginx 配置
 ├── public/
-│   ├── temp/                      # 临时文件目录（30分钟过期）
+│   ├── fit_files/                 # 本地 FIT 缓存目录
+│   ├── outputs/                   # 生成产物目录（30分钟过期）
 │   └── .gitkeep
 ├── package.json
 ├── tsconfig.json
@@ -344,9 +345,10 @@ TEMP_DIR=/var/lib/igpsport/temp
 
 ## 文件清理机制
 
-- **临时文件存储**：所有生成文件（PNG、HTML、FIT）存储在 `TEMP_DIR`
+- **显式配置 `TEMP_DIR`**：FIT、PNG、HTML 都存到 `TEMP_DIR`
+- **未配置 `TEMP_DIR`**：FIT 默认存到 `public/fit_files`，PNG 和 HTML 默认存到 `public/outputs`
 - **30分钟过期**：PNG 和 HTML 文件30分钟后自动删除
-- **立即清理**：FIT 文件在生成完成后立即删除
+- **本地复用**：已有同名 FIT 文件时会跳过重新下载
 - **自动清理**：每次生成前自动清理过期文件
 
 ## 地图样式
