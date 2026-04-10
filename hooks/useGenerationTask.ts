@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { getErrorMessage } from '@/lib/error-utils'
 import { createGenerationTask, fetchGenerationTask } from '@/lib/generation/task-api'
 import {
   isTaskActive,
@@ -109,12 +110,4 @@ export function useGenerationTask() {
     submitTask,
     loading: isCreating || isTaskActive(task?.status),
   }
-}
-
-function getErrorMessage(error: unknown): string {
-  if (error instanceof Error) {
-    return error.message
-  }
-
-  return '未知错误'
 }

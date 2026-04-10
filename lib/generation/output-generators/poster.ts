@@ -2,7 +2,8 @@ import path from 'path'
 import { promises as fs } from 'fs'
 import { buildArtifactUrl, getFitFilePath } from '@/lib/generation/artifact-service'
 import { executePythonScript } from '@/lib/generation/python-runner'
-import { getErrorMessage, parsePythonResult } from '@/lib/generation/python-result'
+import { getErrorMessage } from '@/lib/error-utils'
+import { parsePythonResult } from '@/lib/generation/python-result'
 import {
   addTaskArtifact,
   appendTaskLog,

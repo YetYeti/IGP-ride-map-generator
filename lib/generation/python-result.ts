@@ -38,10 +38,4 @@ export function parsePythonResult(stdout: string): ParsedPythonResult {
   }
 }
 
-export function getErrorMessage(error: unknown): string {
-  if (error instanceof Error) {
-    return error.message
-  }
-
-  return '未知错误'
-}
+import { getErrorMessage } from '@/lib/error-utils'

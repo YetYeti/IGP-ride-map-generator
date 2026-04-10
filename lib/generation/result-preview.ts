@@ -1,3 +1,4 @@
+import { getErrorMessage } from '@/lib/error-utils'
 import type {
   GenerationArtifact,
   GenerationArtifactKind,
@@ -53,12 +54,4 @@ export function preloadImage(
     onLoadStateChange(url, false)
   }
   img.src = url
-}
-
-function getErrorMessage(error: unknown): string {
-  if (error instanceof Error) {
-    return error.message
-  }
-
-  return '未知错误'
 }

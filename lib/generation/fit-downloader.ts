@@ -1,7 +1,7 @@
 import { writeFileSync } from 'fs'
 import { getFitFilePath, hasUsableFitFile } from '@/lib/generation/artifact-service'
 import { updateRequestedOutputsProgress } from '@/lib/generation/output-progress'
-import { getErrorMessage } from '@/lib/generation/python-result'
+import { getErrorMessage } from '@/lib/error-utils'
 import {
   appendTaskLog,
   setTaskProgress,

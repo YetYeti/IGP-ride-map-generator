@@ -11,7 +11,7 @@ import {
 import { cleanupExpiredFiles, ensureTempDir } from '@/lib/generation/artifact-service'
 import { downloadFitFilesForActivities } from '@/lib/generation/fit-downloader'
 import { updateRequestedOutputsProgress } from '@/lib/generation/output-progress'
-import { getErrorMessage } from '@/lib/generation/python-result'
+import { getErrorMessage } from '@/lib/error-utils'
 import { generateRequestedArtifacts } from '@/lib/generation/requested-artifacts'
 import {
   completeTaskSuccessfully,
