@@ -6,6 +6,43 @@ import type {
 
 export type CombinedMapSettingField = 'trackWidth' | 'trackSpacing' | 'columns' | 'trackPadding'
 
+export const COMBINED_MAP_CUSTOM_FIELDS = [
+  {
+    field: 'trackWidth',
+    label: '轨迹线条粗细',
+    min: 1,
+    max: 10,
+    step: 1,
+  },
+  {
+    field: 'trackSpacing',
+    label: '小图之间间隔（像素）',
+    min: 0,
+    max: 1000,
+    step: 10,
+  },
+  {
+    field: 'columns',
+    label: '每行小图数量',
+    min: 1,
+    max: 10,
+    step: 1,
+  },
+  {
+    field: 'trackPadding',
+    label: '轨迹周围留白比例',
+    min: 0,
+    max: 0.5,
+    step: 0.05,
+  },
+] satisfies Array<{
+  field: CombinedMapSettingField
+  label: string
+  min: number
+  max: number
+  step: number
+}>
+
 export const COMBINED_MAP_LAYOUT_PRESETS = {
   compact: {
     label: '紧凑布局',

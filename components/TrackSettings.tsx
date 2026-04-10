@@ -3,6 +3,7 @@
 import React from 'react'
 import {
   applyCombinedMapLayoutPreset,
+  COMBINED_MAP_CUSTOM_FIELDS,
   COMBINED_MAP_LAYOUT_PRESETS,
   type CombinedMapSettingField,
   normalizeNumberInputValue,
@@ -184,38 +185,17 @@ export function TrackSettings({
               <div className="border-t pt-4">
                 <div className="mb-3 text-sm font-medium text-gray-700">自定义参数</div>
                 <div className="space-y-3">
-                  <NumberInput
-                    label="轨迹线条粗细"
-                    value={combinedMap.trackWidth}
-                    min={1}
-                    max={10}
-                    step={1}
-                    onChange={(value) => handleCombinedMapSettingsChange('trackWidth', value)}
-                  />
-                  <NumberInput
-                    label="小图之间间隔（像素）"
-                    value={combinedMap.trackSpacing}
-                    min={0}
-                    max={1000}
-                    step={10}
-                    onChange={(value) => handleCombinedMapSettingsChange('trackSpacing', value)}
-                  />
-                  <NumberInput
-                    label="每行小图数量"
-                    value={combinedMap.columns}
-                    min={1}
-                    max={10}
-                    step={1}
-                    onChange={(value) => handleCombinedMapSettingsChange('columns', value)}
-                  />
-                  <NumberInput
-                    label="轨迹周围留白比例"
-                    value={combinedMap.trackPadding}
-                    min={0}
-                    max={0.5}
-                    step={0.05}
-                    onChange={(value) => handleCombinedMapSettingsChange('trackPadding', value)}
-                  />
+                  {COMBINED_MAP_CUSTOM_FIELDS.map((fieldConfig) => (
+                    <NumberInput
+                      key={fieldConfig.field}
+                      label={fieldConfig.label}
+                      value={combinedMap[fieldConfig.field]}
+                      min={fieldConfig.min}
+                      max={fieldConfig.max}
+                      step={fieldConfig.step}
+                      onChange={(value) => handleCombinedMapSettingsChange(fieldConfig.field, value)}
+                    />
+                  ))}
                 </div>
               </div>
             )}
