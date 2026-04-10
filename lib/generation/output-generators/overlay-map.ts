@@ -6,7 +6,6 @@ import { parsePythonResult } from '@/lib/generation/python-result'
 import {
   addTaskArtifact,
   appendTaskLog,
-  setTaskProgress,
   updateTaskOutputProgress,
 } from '@/lib/generation/task-store'
 import type { OverlayMapOutputConfig } from '@/lib/generation/types'
@@ -16,12 +15,13 @@ export async function generateOverlayMapArtifact(
   taskId: string,
   processedActivities: Activity[],
   output: OverlayMapOutputConfig,
-  tempDir: string
+  tempDir: string,
+  gpsCachePath: string | null
 ) {
   appendTaskLog(taskId, '正在生成轨迹叠加网页...', 'info')
   updateTaskOutputProgress(taskId, 'overlayMap', {
     status: 'running',
-    progress: 72,
+    progress: 5,
   })
 
   const scriptPath = path.join(process.cwd(), 'lib/python/generate_multiple_overlays.py')
@@ -29,6 +29,10 @@ export async function generateOverlayMapArtifact(
   const outputPath = path.join(tempDir, filename)
   const fitFilePaths = processedActivities.map((activity) => getFitFilePath(activity.RideId))
   const args = [...fitFilePaths, outputPath, output.style]
+
+  if (gpsCachePath) {
+    args.push('--gps-cache', gpsCachePath)
+  }
 
   try {
     const { stdout } = await executePythonScript(scriptPath, args, (message) => {
@@ -40,7 +44,7 @@ export async function generateOverlayMapArtifact(
       appendTaskLog(taskId, `生成轨迹叠加网页失败: ${pythonResult.error}`, 'error')
       updateTaskOutputProgress(taskId, 'overlayMap', {
         status: 'failed',
-        progress: 72,
+        progress: 5,
       })
       return
     }
@@ -62,12 +66,11 @@ export async function generateOverlayMapArtifact(
       status: 'completed',
       progress: 100,
     })
-    setTaskProgress(taskId, 95)
   } catch (error: unknown) {
     appendTaskLog(taskId, `生成轨迹叠加网页失败: ${getErrorMessage(error)}`, 'error')
     updateTaskOutputProgress(taskId, 'overlayMap', {
       status: 'failed',
-      progress: 72,
+      progress: 5,
     })
   }
 }

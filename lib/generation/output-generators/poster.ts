@@ -7,7 +7,6 @@ import { parsePythonResult } from '@/lib/generation/python-result'
 import {
   addTaskArtifact,
   appendTaskLog,
-  setTaskProgress,
   updateTaskOutputProgress,
 } from '@/lib/generation/task-store'
 import type { Activity } from '@/lib/igpsport'
@@ -15,12 +14,13 @@ import type { Activity } from '@/lib/igpsport'
 export async function generatePosterArtifact(
   taskId: string,
   processedActivities: Activity[],
-  tempDir: string
+  tempDir: string,
+  gpsCachePath: string | null
 ) {
   appendTaskLog(taskId, '正在生成轨迹海报...', 'info')
   updateTaskOutputProgress(taskId, 'poster', {
     status: 'running',
-    progress: 72,
+    progress: 5,
   })
 
   const scriptPath = path.join(process.cwd(), 'lib/python/generate_track_art_poster.py')
@@ -31,7 +31,13 @@ export async function generatePosterArtifact(
   try {
     await fs.writeFile(fitListPath, `${fitFilePaths.join('\n')}\n`, 'utf-8')
 
-    const { stdout } = await executePythonScript(scriptPath, [fitListPath, outputPath], (message) => {
+    const args = [fitListPath, outputPath]
+
+    if (gpsCachePath) {
+      args.push('--gps-cache', gpsCachePath)
+    }
+
+    const { stdout } = await executePythonScript(scriptPath, args, (message) => {
       appendTaskLog(taskId, message, 'info')
     })
     const pythonResult = parsePythonResult(stdout)
@@ -40,7 +46,7 @@ export async function generatePosterArtifact(
       appendTaskLog(taskId, `生成轨迹海报失败: ${pythonResult.error}`, 'error')
       updateTaskOutputProgress(taskId, 'poster', {
         status: 'failed',
-        progress: 72,
+        progress: 5,
       })
       return
     }
@@ -64,12 +70,11 @@ export async function generatePosterArtifact(
       status: 'completed',
       progress: 100,
     })
-    setTaskProgress(taskId, 90)
   } catch (error: unknown) {
     appendTaskLog(taskId, `生成轨迹海报失败: ${getErrorMessage(error)}`, 'error')
     updateTaskOutputProgress(taskId, 'poster', {
       status: 'failed',
-      progress: 72,
+      progress: 5,
     })
   }
 }

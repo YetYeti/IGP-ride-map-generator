@@ -11,7 +11,7 @@ import fitparse
 import folium
 from branca.element import Element
 
-from fit_utils import print_progress, extract_gps_data
+from fit_utils import print_progress, extract_gps_data, load_gps_cache
 
 # 常量
 TRACK_COLOR = "#F1532E"
@@ -162,6 +162,7 @@ def main():
     parser.add_argument("fit_files", nargs="+", help="FIT文件路径")
     parser.add_argument("output_path", help="输出HTML文件路径")
     parser.add_argument("map_style", help="地图样式")
+    parser.add_argument("--gps-cache", type=str, default=None, help="GPS 数据缓存 JSON 路径")
 
     args = parser.parse_args()
 
@@ -169,13 +170,16 @@ def main():
         print_progress(f"开始生成交互式地图，共 {len(args.fit_files)} 个FIT文件")
         print_progress(f"使用地图样式: {args.map_style}")
 
+        gps_cache = load_gps_cache(args.gps_cache) if args.gps_cache else {}
         all_gps_data = []
 
-        # 提取所有GPS数据
         for i, fit_file in enumerate(args.fit_files, 1):
             print_progress(f"正在处理活动 {i}/{len(args.fit_files)} ...")
 
-            gps_data = extract_gps_data(fit_file)
+            abs_fit = os.path.abspath(fit_file)
+            gps_data = (
+                gps_cache.get(abs_fit) if abs_fit in gps_cache else extract_gps_data(fit_file)
+            )
 
             if not gps_data:
                 continue

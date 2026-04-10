@@ -25,7 +25,7 @@ import matplotlib.pyplot as plt
 import osmnx as ox
 from pyproj import Transformer
 
-from fit_utils import print_progress, extract_gps_data
+from fit_utils import print_progress, extract_gps_data, load_gps_cache
 
 TRACK_COLOR = "#F1532E"
 DEFAULT_TRACK_WIDTH = 1.6
@@ -109,13 +109,22 @@ def resolve_output_path(output_path: str) -> str:
     return str(path / DEFAULT_OUTPUT_FILENAME)
 
 
-def collect_tracks(fit_files: Iterable[str]) -> List[List[Tuple[float, float]]]:
+def collect_tracks(
+    fit_files: Iterable[str], gps_cache: dict | None = None
+) -> List[List[Tuple[float, float]]]:
     """收集所有有效轨迹。"""
     tracks: List[List[Tuple[float, float]]] = []
 
     for index, fit_file in enumerate(fit_files, start=1):
         print_progress(f"正在读取轨迹 {index} ...")
-        gps_data = extract_gps_data(fit_file)
+
+        if gps_cache is not None:
+            abs_fit = os.path.abspath(fit_file)
+            gps_data = gps_cache.get(abs_fit)
+            if gps_data is None:
+                gps_data = extract_gps_data(fit_file)
+        else:
+            gps_data = extract_gps_data(fit_file)
 
         if gps_data:
             tracks.append(gps_data)
@@ -646,6 +655,7 @@ def main():
         default=DEFAULT_QUERY_PADDING,
         help="地图数据查询范围扩展比例，默认固定为 0.18 以便复用缓存",
     )
+    parser.add_argument("--gps-cache", type=str, default=None, help="GPS 数据缓存 JSON 路径")
 
     args = parser.parse_args()
 
@@ -662,7 +672,8 @@ def main():
             sys.exit(1)
 
         print_progress(f"开始生成艺术地图海报，共 {len(fit_files)} 个 FIT 文件")
-        tracks = collect_tracks(fit_files)
+        gps_cache = load_gps_cache(args.gps_cache) if args.gps_cache else None
+        tracks = collect_tracks(fit_files, gps_cache)
 
         if not tracks:
             print(

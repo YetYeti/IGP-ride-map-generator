@@ -8,22 +8,53 @@ export async function generateRequestedArtifacts(
   taskId: string,
   request: GenerationTaskRequest,
   processedActivities: Activity[],
-  tempDir: string
+  tempDir: string,
+  gpsCachePath: string | null
 ) {
+  const jobs: Promise<void>[] = []
+
   if (request.outputs.overlayMap.enabled && processedActivities.length > 0) {
-    await generateOverlayMapArtifact(taskId, processedActivities, request.outputs.overlayMap, tempDir)
+    jobs.push(
+      generateOverlayMapArtifact(
+        taskId,
+        processedActivities,
+        request.outputs.overlayMap,
+        tempDir,
+        gpsCachePath
+      )
+    )
   }
 
   if (request.outputs.combinedMap.enabled && processedActivities.length > 0) {
-    await generateCombinedMapArtifact(
-      taskId,
-      processedActivities,
-      request.outputs.combinedMap,
-      tempDir
+    jobs.push(
+      generateCombinedMapArtifact(
+        taskId,
+        processedActivities,
+        request.outputs.combinedMap,
+        tempDir,
+        gpsCachePath
+      )
     )
   }
 
   if (request.outputs.poster.enabled && processedActivities.length > 0) {
-    await generatePosterArtifact(taskId, processedActivities, tempDir)
+    jobs.push(
+      generatePosterArtifact(taskId, processedActivities, tempDir, gpsCachePath)
+    )
+  }
+
+  if (jobs.length === 0) {
+    return
+  }
+
+  const results = await Promise.allSettled(jobs)
+
+  const failures = results.filter((r) => r.status === 'rejected')
+  if (failures.length > 0) {
+    for (const failure of failures) {
+      if (failure.status === 'rejected') {
+        console.error(`产物生成异常:`, failure.reason)
+      }
+    }
   }
 }

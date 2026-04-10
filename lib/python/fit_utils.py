@@ -1,8 +1,9 @@
 """FIT 文件解析与进度报告的共享工具函数。"""
 
+import json
 import os
 import sys
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 
 import fitparse
 
@@ -33,3 +34,18 @@ def extract_gps_data(fit_file_path: str) -> List[Tuple[float, float]]:
     except Exception as error:
         print_progress(f"提取 GPS 数据失败 {os.path.basename(fit_file_path)}: {error}")
         return []
+
+
+def load_gps_cache(cache_path: str) -> Dict[str, List[Tuple[float, float]]]:
+    """加载 GPS 缓存 JSON，返回 {abs_fit_path: [(lat, lon), ...]} 字典。"""
+    with open(cache_path, "r", encoding="utf-8") as f:
+        entries = json.load(f)
+
+    cache: Dict[str, List[Tuple[float, float]]] = {}
+    for entry in entries:
+        file_path = entry.get("file", "")
+        points = entry.get("points", [])
+        if file_path and points:
+            cache[os.path.abspath(file_path)] = [(p[0], p[1]) for p in points]
+
+    return cache

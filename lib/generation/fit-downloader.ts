@@ -53,7 +53,7 @@ export async function downloadFitFilesForActivities(
       ...batchResults.filter((activity): activity is Activity => activity !== null)
     )
 
-    const progress = 30 + (processedActivities.length / activities.length) * 40
+    const progress = 30 + (processedActivities.length / activities.length) * 35
     setTaskProgress(taskId, progress)
     updateRequestedOutputsProgress(
       taskId,

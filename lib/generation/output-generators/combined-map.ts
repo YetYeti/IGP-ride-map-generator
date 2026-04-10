@@ -6,7 +6,6 @@ import { parsePythonResult } from '@/lib/generation/python-result'
 import {
   addTaskArtifact,
   appendTaskLog,
-  setTaskProgress,
   updateTaskOutputProgress,
 } from '@/lib/generation/task-store'
 import type { CombinedMapOutputConfig } from '@/lib/generation/types'
@@ -16,12 +15,13 @@ export async function generateCombinedMapArtifact(
   taskId: string,
   processedActivities: Activity[],
   output: CombinedMapOutputConfig,
-  tempDir: string
+  tempDir: string,
+  gpsCachePath: string | null
 ) {
   appendTaskLog(taskId, '正在生成轨迹合成图...', 'info')
   updateTaskOutputProgress(taskId, 'combinedMap', {
     status: 'running',
-    progress: 72,
+    progress: 5,
   })
 
   const scriptPath = path.join(process.cwd(), 'lib/python/generate_combined_map.py')
@@ -41,6 +41,10 @@ export async function generateCombinedMapArtifact(
     output.trackPadding.toString(),
   ]
 
+  if (gpsCachePath) {
+    args.push('--gps-cache', gpsCachePath)
+  }
+
   try {
     const { stdout } = await executePythonScript(scriptPath, args, (message) => {
       appendTaskLog(taskId, message, 'info')
@@ -51,7 +55,7 @@ export async function generateCombinedMapArtifact(
       appendTaskLog(taskId, `生成轨迹合成图失败: ${pythonResult.error}`, 'error')
       updateTaskOutputProgress(taskId, 'combinedMap', {
         status: 'failed',
-        progress: 72,
+        progress: 5,
       })
       return
     }
@@ -72,12 +76,11 @@ export async function generateCombinedMapArtifact(
       status: 'completed',
       progress: 100,
     })
-    setTaskProgress(taskId, 85)
   } catch (error: unknown) {
     appendTaskLog(taskId, `生成轨迹合成图失败: ${getErrorMessage(error)}`, 'error')
     updateTaskOutputProgress(taskId, 'combinedMap', {
       status: 'failed',
-      progress: 72,
+      progress: 5,
     })
   }
 }

@@ -85,7 +85,22 @@ export function updateOutputProgressState(
   if ('progress' in updates && updates.progress !== undefined) {
     current.progress = clampProgress(updates.progress)
   }
+
+  syncOverallProgress(task)
   task.updatedAt = createIsoTimestamp()
+}
+
+function syncOverallProgress(task: GenerationTask): void {
+  const activeOutputs = Object.values(task.outputsProgress).filter(
+    (o) => o.enabled && o.status !== 'idle' && o.status !== 'pending'
+  )
+
+  if (activeOutputs.length === 0) {
+    return
+  }
+
+  const avg = activeOutputs.reduce((sum, o) => sum + o.progress, 0) / activeOutputs.length
+  task.progress = clampProgress(70 + avg * 0.3)
 }
 
 export function clampProgress(progress: number): number {

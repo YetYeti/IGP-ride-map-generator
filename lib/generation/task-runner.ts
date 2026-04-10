@@ -12,6 +12,7 @@ import { cleanupExpiredFiles, ensureTempDir } from '@/lib/generation/artifact-se
 import { downloadFitFilesForActivities } from '@/lib/generation/fit-downloader'
 import { updateRequestedOutputsProgress } from '@/lib/generation/output-progress'
 import { getErrorMessage } from '@/lib/error-utils'
+import { extractGpsCache } from '@/lib/generation/gps-cache'
 import { generateRequestedArtifacts } from '@/lib/generation/requested-artifacts'
 import {
   completeTaskSuccessfully,
@@ -59,14 +60,19 @@ async function runTask(taskId: string, request: GenerationTaskRequest) {
   })
 
   appendTaskLog(taskId, `成功处理 ${processedActivities.length} 个活动`, 'success')
-  setTaskProgress(taskId, 70)
+  setTaskProgress(taskId, 65)
   updateRequestedOutputsProgress(taskId, request, 58, 'pending')
 
   if (failIfNoProcessedActivities(taskId, request, processedActivities.length, requestedArtifactCount)) {
     return
   }
 
-  await generateRequestedArtifacts(taskId, request, processedActivities, tempDir)
+  const gpsCachePath = await extractGpsCache(taskId, processedActivities, tempDir)
+
+  setTaskProgress(taskId, 70)
+  updateRequestedOutputsProgress(taskId, request, 65, 'pending')
+
+  await generateRequestedArtifacts(taskId, request, processedActivities, tempDir, gpsCachePath)
 
   if (failIfNoArtifactsGenerated(taskId, request, requestedArtifactCount)) {
     return
