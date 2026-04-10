@@ -2,6 +2,12 @@
 
 import React from 'react'
 import { createGenerationTask, fetchGenerationTask } from '@/lib/generation/task-api'
+import {
+  isTaskActive,
+  isTaskTerminal,
+  markTaskAsExpired,
+  TASK_EXPIRED_ERROR,
+} from '@/lib/generation/task-status'
 import type { GenerationTask, GenerationTaskRequest } from '@/lib/generation/types'
 
 const POLL_INTERVAL_MS = 2000
@@ -14,7 +20,7 @@ export function useGenerationTask() {
   const pollTimeoutRef = React.useRef<number | null>(null)
 
   React.useEffect(() => {
-    if (!task || task.status === 'completed' || task.status === 'failed') {
+    if (!task || isTaskTerminal(task.status)) {
       return
     }
 
@@ -26,17 +32,9 @@ export function useGenerationTask() {
 
         if (nextTask === null) {
           if (!cancelled) {
-            setError('任务不存在或已过期')
+            setError(TASK_EXPIRED_ERROR)
             startTransition(() => {
-              setTask((currentTask) =>
-                currentTask
-                  ? {
-                      ...currentTask,
-                      status: 'failed',
-                      error: '任务不存在或已过期',
-                    }
-                  : null
-              )
+              setTask((currentTask) => markTaskAsExpired(currentTask))
             })
           }
           return
@@ -50,7 +48,7 @@ export function useGenerationTask() {
           setTask(nextTask)
         })
 
-        if (nextTask.status === 'queued' || nextTask.status === 'running') {
+        if (isTaskActive(nextTask.status)) {
           pollTimeoutRef.current = window.setTimeout(pollTask, POLL_INTERVAL_MS)
         }
       } catch (pollError: unknown) {
@@ -104,7 +102,7 @@ export function useGenerationTask() {
     task,
     error,
     submitTask,
-    loading: isCreating || task?.status === 'queued' || task?.status === 'running',
+    loading: isCreating || isTaskActive(task?.status),
   }
 }
 
