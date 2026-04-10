@@ -46,35 +46,31 @@ export function getTask(taskId: string): GenerationTask | null {
 }
 
 export function setTaskRunning(taskId: string): GenerationTask | null {
-  return mutateTask(taskId, (task) => ({
-    ...task,
+  return patchTask(taskId, {
     status: 'running',
     error: null,
-  }))
+  })
 }
 
 export function setTaskCompleted(taskId: string): GenerationTask | null {
-  return mutateTask(taskId, (task) => ({
-    ...task,
+  return patchTask(taskId, {
     status: 'completed',
     progress: 100,
     error: null,
-  }))
+  })
 }
 
 export function setTaskFailed(taskId: string, error: string): GenerationTask | null {
-  return mutateTask(taskId, (task) => ({
-    ...task,
+  return patchTask(taskId, {
     status: 'failed',
     error,
-  }))
+  })
 }
 
 export function setTaskProgress(taskId: string, progress: number): GenerationTask | null {
-  return mutateTask(taskId, (task) => ({
-    ...task,
+  return patchTask(taskId, {
     progress: clampProgress(progress),
-  }))
+  })
 }
 
 export function appendTaskLog(
@@ -89,8 +85,7 @@ export function updateTaskStats(
   taskId: string,
   stats: Partial<GenerationTaskStats>
 ): GenerationTask | null {
-  return mutateTask(taskId, (task) => ({
-    ...task,
+  return patchTask(taskId, (task) => ({
     stats: {
       ...task.stats,
       ...stats,
@@ -112,10 +107,9 @@ export function configureTaskOutputs(
     overlayMap: boolean
   }
 ): GenerationTask | null {
-  return mutateTask(taskId, (task) => ({
-    ...task,
+  return patchTask(taskId, {
     outputsProgress: createConfiguredOutputsProgress(outputs),
-  }))
+  })
 }
 
 export function updateTaskOutputProgress(
@@ -146,4 +140,14 @@ function mutateTask(
   generationTasks.set(taskId, updatedTask)
 
   return cloneTask(updatedTask)
+}
+
+function patchTask(
+  taskId: string,
+  updates: Partial<GenerationTask> | ((task: GenerationTask) => Partial<GenerationTask>)
+): GenerationTask | null {
+  return mutateTask(taskId, (task) => ({
+    ...task,
+    ...(typeof updates === 'function' ? updates(task) : updates),
+  }))
 }
