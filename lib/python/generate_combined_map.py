@@ -86,16 +86,17 @@ def generate_single_track(
         fig.patch.set_facecolor(BACKGROUND_COLOR)
         ax.set_facecolor(BACKGROUND_COLOR)
 
-        ax.plot(longs, lats, color=TRACK_COLOR, linewidth=track_width, alpha=1.0)
-        ax.set_axis_off()
+        try:
+            ax.plot(longs, lats, color=TRACK_COLOR, linewidth=track_width, alpha=1.0)
+            ax.set_axis_off()
 
-        # 设置地图范围，确保轨迹居中且保持正确的宽高比
-        _set_map_bounds(ax, lats, longs, track_padding)
+            _set_map_bounds(ax, lats, longs, track_padding)
 
-        plt.savefig(
-            output_path, dpi=IMAGE_DPI, bbox_inches="tight", pad_inches=0, transparent=False
-        )
-        plt.close()
+            plt.savefig(
+                output_path, dpi=IMAGE_DPI, bbox_inches="tight", pad_inches=0, transparent=False
+            )
+        finally:
+            plt.close()
 
         return True
     except Exception as e:
@@ -177,54 +178,55 @@ def main():
     try:
         print_progress(f"开始生成合成图，共 {len(args.fit_files)} 个FIT文件")
 
-        # 临时目录存储单个轨迹图
+        import shutil
         import tempfile
 
-        temp_dir = tempfile.mkdtemp()
+        with tempfile.TemporaryDirectory() as temp_dir:
+            generated_images = []
 
-        generated_images = []
+            for i, fit_file in enumerate(args.fit_files, 1):
+                print_progress(f"正在处理活动 {i}/{len(args.fit_files)} ...")
 
-        # 为每个FIT文件生成单个轨迹图
-        for i, fit_file in enumerate(args.fit_files, 1):
-            print_progress(f"正在处理活动 {i}/{len(args.fit_files)} ...")
+                gps_data = extract_gps_data(fit_file)
 
-            gps_data = extract_gps_data(fit_file)
+                if not gps_data:
+                    continue
 
-            if not gps_data:
-                continue
+                ride_id = os.path.splitext(os.path.basename(fit_file))[0]
+                temp_image_path = os.path.join(temp_dir, f"{ride_id}.png")
+                if generate_single_track(
+                    gps_data, temp_image_path, args.track_width, args.track_padding
+                ):
+                    generated_images.append(temp_image_path)
 
-            ride_id = os.path.splitext(os.path.basename(fit_file))[0]
-            temp_image_path = os.path.join(temp_dir, f"{ride_id}.png")
-            if generate_single_track(
-                gps_data, temp_image_path, args.track_width, args.track_padding
-            ):
-                generated_images.append(temp_image_path)
+            print_progress(f"成功生成 {len(generated_images)} 个轨迹图")
 
-        print_progress(f"成功生成 {len(generated_images)} 个轨迹图")
+            if generated_images:
+                print_progress("正在生成合并大图...")
+                success = generate_combined_map(
+                    generated_images, args.output_path, args.track_spacing, args.columns
+                )
 
-        # 生成合并大图
-        if generated_images:
-            print_progress("正在生成合并大图...")
-            success = generate_combined_map(
-                generated_images, args.output_path, args.track_spacing, args.columns
-            )
-
-            if success:
-                result = {
-                    "success": True,
-                    "total_tracks": len(generated_images),
-                    "grid_size": f"{math.ceil(len(generated_images) / args.columns)}x{args.columns}",
-                    "output_path": args.output_path,
-                }
-                print(json.dumps(result, ensure_ascii=False))
+                if success:
+                    result = {
+                        "success": True,
+                        "total_tracks": len(generated_images),
+                        "grid_size": f"{math.ceil(len(generated_images) / args.columns)}x{args.columns}",
+                        "output_path": args.output_path,
+                    }
+                    print(json.dumps(result, ensure_ascii=False))
+                else:
+                    print(
+                        json.dumps(
+                            {"success": False, "error": "生成合并大图失败"}, ensure_ascii=False
+                        )
+                    )
+                    sys.exit(1)
             else:
                 print(
-                    json.dumps({"success": False, "error": "生成合并大图失败"}, ensure_ascii=False)
+                    json.dumps({"success": False, "error": "没有有效的GPS数据"}, ensure_ascii=False)
                 )
                 sys.exit(1)
-        else:
-            print(json.dumps({"success": False, "error": "没有有效的GPS数据"}, ensure_ascii=False))
-            sys.exit(1)
 
     except Exception as e:
         print(
