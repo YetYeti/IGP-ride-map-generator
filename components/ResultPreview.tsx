@@ -1,8 +1,12 @@
 'use client'
 
 import React from 'react'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
+import {
+  downloadArtifactFile,
+  getArtifactsByKind,
+  preloadImage,
+} from '@/lib/generation/result-preview'
 import { MapStyleLabels } from '@/lib/map-styles'
 import type { GenerationTask } from '@/lib/generation/types'
 
@@ -13,59 +17,20 @@ interface ResultPreviewProps {
 export function ResultPreview({ task }: ResultPreviewProps) {
   const [previewImages, setPreviewImages] = React.useState<Record<string, boolean>>({})
   const combinedMaps = React.useMemo(
-    () => task?.artifacts.filter((artifact) => artifact.kind === 'combined-map') ?? [],
+    () => getArtifactsByKind(task, 'combined-map'),
     [task]
   )
   const overlayMaps = React.useMemo(
-    () => task?.artifacts.filter((artifact) => artifact.kind === 'overlay-map') ?? [],
+    () => getArtifactsByKind(task, 'overlay-map'),
     [task]
   )
-
-  const downloadFile = async (url: string, filename: string) => {
-    try {
-      console.log('Downloading:', url, filename)
-
-      const response = await fetch(url)
-      if (!response.ok) {
-        console.error('Download failed:', response.status)
-        alert(`下载失败: ${response.status}`)
-        return
-      }
-
-      const blob = await response.blob()
-      console.log('Blob type:', blob.type, 'Size:', blob.size)
-
-      const link = document.createElement('a')
-      link.href = URL.createObjectURL(blob)
-      link.download = filename
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      URL.revokeObjectURL(link.href)
-
-      console.log('Download initiated')
-    } catch (error: any) {
-      console.error('Download error:', error)
-      alert(`下载出错: ${error.message}`)
-    }
-  }
-
-  const loadImage = (url: string) => {
-    const img = new Image()
-    img.onload = () => {
-      setPreviewImages(prev => ({ ...prev, [url]: true }))
-    }
-    img.onerror = () => {
-      console.error('Failed to load image:', url)
-      setPreviewImages(prev => ({ ...prev, [url]: false }))
-    }
-    img.src = url
-  }
 
   React.useEffect(() => {
     if (combinedMaps.length > 0) {
       combinedMaps.forEach((map) => {
-        loadImage(map.url)
+        preloadImage(map.url, (url, loaded) => {
+          setPreviewImages((prev) => ({ ...prev, [url]: loaded }))
+        })
       })
     }
   }, [combinedMaps])
@@ -83,7 +48,7 @@ export function ResultPreview({ task }: ResultPreviewProps) {
             {overlayMaps.length === 1 && (
               <Button
                 size="sm"
-                onClick={() => downloadFile(overlayMaps[0].url, overlayMaps[0].filename)}
+                onClick={() => downloadArtifactFile(overlayMaps[0].url, overlayMaps[0].filename)}
               >
                 下载
               </Button>
@@ -99,7 +64,7 @@ export function ResultPreview({ task }: ResultPreviewProps) {
                   </span>
                   <Button
                     size="sm"
-                    onClick={() => downloadFile(item.url, item.filename)}
+                    onClick={() => downloadArtifactFile(item.url, item.filename)}
                   >
                     下载
                   </Button>
@@ -122,7 +87,7 @@ export function ResultPreview({ task }: ResultPreviewProps) {
             {combinedMaps.length === 1 && (
               <Button
                 size="sm"
-                onClick={() => downloadFile(combinedMaps[0].url, combinedMaps[0].filename)}
+                onClick={() => downloadArtifactFile(combinedMaps[0].url, combinedMaps[0].filename)}
               >
                 下载
               </Button>
@@ -150,7 +115,7 @@ export function ResultPreview({ task }: ResultPreviewProps) {
                 <div className="flex justify-end">
                   <Button
                     size="sm"
-                    onClick={() => downloadFile(item.url, item.filename)}
+                    onClick={() => downloadArtifactFile(item.url, item.filename)}
                   >
                     下载
                   </Button>
