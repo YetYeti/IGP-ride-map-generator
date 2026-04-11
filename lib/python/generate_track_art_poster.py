@@ -9,6 +9,7 @@ import hashlib
 import json
 import math
 import os
+import resource
 import sys
 import time
 import traceback
@@ -49,6 +50,7 @@ CACHE_VERSION = "v1"
 CACHE_ROOT = PROJECT_ROOT / "cache" / "poster_osm"
 CACHE_ROADS_DIR = CACHE_ROOT / "roads"
 CACHE_FEATURES_DIR = CACHE_ROOT / "features"
+DEFAULT_MEMORY_LOG_PATH = PROJECT_ROOT / "cache" / "poster_memory.log"
 THEMES_DIR = Path(__file__).with_name("poster_themes")
 
 WATER_TAGS = {
@@ -68,6 +70,41 @@ def ensure_cache_dirs():
     """确保缓存目录存在。"""
     CACHE_ROADS_DIR.mkdir(parents=True, exist_ok=True)
     CACHE_FEATURES_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def get_rss_mb() -> float:
+    """获取当前进程的常驻内存大小（MB）。"""
+    rss_kb = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+
+    if sys.platform == "darwin":
+        return rss_kb / (1024 * 1024)
+
+    return rss_kb / 1024
+
+
+def log_memory(stage: str, log_path: str | None = None):
+    """记录阶段性内存占用，并写入日志文件。"""
+    rss_mb = get_rss_mb()
+    message = f"内存占用 {stage}: {rss_mb:.1f} MB"
+    print_progress(message)
+
+    if not log_path:
+        return
+
+    target_path = Path(log_path).expanduser()
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    with target_path.open("a", encoding="utf-8") as log_file:
+        log_file.write(
+            json.dumps(
+                {
+                    "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+                    "stage": stage,
+                    "rss_mb": round(rss_mb, 1),
+                },
+                ensure_ascii=False,
+            )
+            + "\n"
+        )
 
 
 def load_themes() -> dict[str, dict[str, str]]:
@@ -526,6 +563,7 @@ def render_poster(
     track_opacity: float,
     padding_ratio: float,
     query_padding_ratio: float,
+    memory_log_path: str | None,
 ) -> dict[str, object]:
     """生成艺术地图海报。"""
     theme = THEMES[theme_name]
@@ -542,27 +580,35 @@ def render_poster(
     ox.settings.log_console = False
     ox.settings.requests_timeout = 180
 
+    log_memory("开始渲染前", memory_log_path)
     print_progress("正在获取道路网络，首次生成或新区域可能需要较长时间...")
     graph = fetch_graph_for_bbox(query_bbox, network_type)
+    log_memory("道路网络获取完成", memory_log_path)
     graph_proj = ox.project_graph(graph)
     del graph
     gc.collect()
+    log_memory("道路网络投影完成", memory_log_path)
 
     print_progress("正在获取水域与绿地区域，首次生成或新区域可能需要较长时间...")
     water = fetch_features_for_bbox(query_bbox, WATER_TAGS, "水域", "water")
+    log_memory("水域数据获取完成", memory_log_path)
     parks = fetch_features_for_bbox(query_bbox, PARK_TAGS, "绿地", "parks")
+    log_memory("绿地数据获取完成", memory_log_path)
 
     if water is not None:
         water = ox.projection.project_gdf(water, to_crs=graph_proj.graph["crs"])
         gc.collect()
+        log_memory("水域投影完成", memory_log_path)
 
     if parks is not None:
         parks = ox.projection.project_gdf(parks, to_crs=graph_proj.graph["crs"])
         gc.collect()
+        log_memory("绿地投影完成", memory_log_path)
 
     fig, ax = plt.subplots(figsize=(width, height), dpi=300)
     fig.patch.set_facecolor(theme["bg"])
     ax.set_facecolor(theme["bg"])
+    log_memory("画布初始化完成", memory_log_path)
 
     if water is not None:
         water.plot(ax=ax, facecolor=theme["water"], edgecolor="none", zorder=0.4)
@@ -572,6 +618,7 @@ def render_poster(
 
     edge_colors = get_edge_colors_by_type(graph_proj, theme)
     edge_widths = get_edge_widths_by_type(graph_proj)
+    log_memory("道路样式数据准备完成", memory_log_path)
 
     ox.plot_graph(
         graph_proj,
@@ -584,6 +631,7 @@ def render_poster(
         show=False,
         close=False,
     )
+    log_memory("道路网络绘制完成", memory_log_path)
 
     transformer = Transformer.from_crs("EPSG:4326", graph_proj.graph["crs"], always_xy=True)
     left_x, bottom_y = transformer.transform(left, bottom)
@@ -609,10 +657,12 @@ def render_poster(
     ax.set_aspect("equal", adjustable="box")
     ax.set_axis_off()
 
+    log_memory("轨迹绘制完成", memory_log_path)
     plt.savefig(themed_output_path, dpi=300, bbox_inches="tight", pad_inches=0)
     plt.close(fig)
     del graph_proj
     gc.collect()
+    log_memory("图片保存完成", memory_log_path)
 
     return {
         "success": True,
@@ -692,6 +742,12 @@ def main():
         help="地图数据查询范围扩展比例，默认固定为 0.18 以便复用缓存",
     )
     parser.add_argument("--gps-cache", type=str, default=None, help="GPS 数据缓存 JSON 路径")
+    parser.add_argument(
+        "--memory-log",
+        type=str,
+        default=str(DEFAULT_MEMORY_LOG_PATH),
+        help="内存日志输出路径，默认写入 cache/poster_memory.log",
+    )
 
     args = parser.parse_args()
 
@@ -731,6 +787,7 @@ def main():
             track_opacity=args.track_opacity,
             padding_ratio=args.padding_ratio,
             query_padding_ratio=args.query_padding_ratio,
+            memory_log_path=args.memory_log,
         )
         print(json.dumps(result, ensure_ascii=False))
     except Exception as error:
