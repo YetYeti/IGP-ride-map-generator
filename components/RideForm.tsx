@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/Input'
 import { TrackSettings } from '@/components/TrackSettings'
 import { useCredentialAutofillSync } from '@/hooks/useCredentialAutofillSync'
 import {
-  canSubmitRequest,
   getAvailableYears,
   syncRequestCredentials,
   updateRequestCombinedMap,
@@ -29,6 +28,10 @@ export function RideForm({ onSubmit, loading }: RideFormProps) {
   const availableYears = React.useMemo(() => getAvailableYears(currentYear), [currentYear])
 
   const [formData, setFormData] = React.useState<GenerationTaskRequest>(createInitialTaskRequest())
+  const [fieldErrors, setFieldErrors] = React.useState({
+    username: '',
+    password: '',
+  })
   const usernameInputRef = React.useRef<HTMLInputElement | null>(null)
   const passwordInputRef = React.useRef<HTMLInputElement | null>(null)
 
@@ -44,10 +47,24 @@ export function RideForm({ onSubmit, loading }: RideFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onSubmit(formData)
-  }
 
-  const canSubmit = canSubmitRequest(formData, loading)
+    const username = usernameInputRef.current?.value ?? formData.credentials.username
+    const password = passwordInputRef.current?.value ?? formData.credentials.password
+    const nextErrors = {
+      username: username.trim() === '' ? '请输入账号' : '',
+      password: password.trim() === '' ? '请输入密码' : '',
+    }
+
+    setFieldErrors(nextErrors)
+
+    if (nextErrors.username || nextErrors.password) {
+      return
+    }
+
+    const nextRequest = syncRequestCredentials(formData, username, password)
+    setFormData(nextRequest)
+    onSubmit(nextRequest)
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -62,11 +79,18 @@ export function RideForm({ onSubmit, loading }: RideFormProps) {
         onChange={(e) => {
           const username = e.currentTarget.value
 
+          setFieldErrors((prev) => ({ ...prev, username: '' }))
           setFormData((prev) => updateRequestUsername(prev, username))
+        }}
+        onFocus={() => {
+          setFieldErrors((prev) => ({ ...prev, username: '' }))
         }}
         required
         disabled={loading}
       />
+      {fieldErrors.username ? (
+        <p className="-mt-4 text-sm text-red-600">{fieldErrors.username}</p>
+      ) : null}
 
       <Input
         ref={passwordInputRef}
@@ -79,11 +103,18 @@ export function RideForm({ onSubmit, loading }: RideFormProps) {
         onChange={(e) => {
           const password = e.currentTarget.value
 
+          setFieldErrors((prev) => ({ ...prev, password: '' }))
           setFormData((prev) => updateRequestPassword(prev, password))
+        }}
+        onFocus={() => {
+          setFieldErrors((prev) => ({ ...prev, password: '' }))
         }}
         required
         disabled={loading}
       />
+      {fieldErrors.password ? (
+        <p className="-mt-4 text-sm text-red-600">{fieldErrors.password}</p>
+      ) : null}
 
       <div className="flex flex-col space-y-1">
         <label className="text-sm font-medium text-gray-700">选择年份</label>
@@ -127,7 +158,7 @@ export function RideForm({ onSubmit, loading }: RideFormProps) {
         type="submit"
         size="lg"
         className="w-full"
-        disabled={!canSubmit}
+        disabled={loading}
       >
         {loading ? '生成中...' : '生成轨迹'}
       </Button>
