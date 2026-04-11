@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import gc
 import hashlib
 import json
 import math
@@ -290,28 +291,37 @@ def split_bbox(
     max_lon_span: float = MAX_TILE_LON_SPAN,
     max_lat_span: float = MAX_TILE_LAT_SPAN,
 ) -> List[Tuple[float, float, float, float]]:
-    """将大范围边界框切分为若干小块。"""
+    """将边界框对齐到固定全局网格后切分为若干小块。"""
     left, bottom, right, top = bbox
-    lon_span = right - left
-    lat_span = top - bottom
+    aligned_left = align_grid_floor(left, max_lon_span, -180.0)
+    aligned_right = align_grid_ceil(right, max_lon_span, -180.0)
+    aligned_bottom = align_grid_floor(bottom, max_lat_span, -90.0)
+    aligned_top = align_grid_ceil(top, max_lat_span, -90.0)
 
-    cols = max(1, math.ceil(lon_span / max_lon_span))
-    rows = max(1, math.ceil(lat_span / max_lat_span))
-
-    lon_step = lon_span / cols
-    lat_step = lat_span / rows
+    cols = max(1, round((aligned_right - aligned_left) / max_lon_span))
+    rows = max(1, round((aligned_top - aligned_bottom) / max_lat_span))
 
     tiles: List[Tuple[float, float, float, float]] = []
 
     for row in range(rows):
         for col in range(cols):
-            tile_left = left + col * lon_step
-            tile_right = right if col == cols - 1 else left + (col + 1) * lon_step
-            tile_bottom = bottom + row * lat_step
-            tile_top = top if row == rows - 1 else bottom + (row + 1) * lat_step
+            tile_left = aligned_left + col * max_lon_span
+            tile_right = min(tile_left + max_lon_span, 180.0)
+            tile_bottom = aligned_bottom + row * max_lat_span
+            tile_top = min(tile_bottom + max_lat_span, 90.0)
             tiles.append((tile_left, tile_bottom, tile_right, tile_top))
 
     return tiles
+
+
+def align_grid_floor(value: float, step: float, origin: float) -> float:
+    """将坐标向下对齐到固定全局网格。"""
+    return origin + math.floor((value - origin) / step) * step
+
+
+def align_grid_ceil(value: float, step: float, origin: float) -> float:
+    """将坐标向上对齐到固定全局网格。"""
+    return origin + math.ceil((value - origin) / step) * step
 
 
 def format_bbox_token(bbox: Tuple[float, float, float, float]) -> str:
@@ -369,7 +379,7 @@ def fetch_graph_for_bbox(
     """按分块查询并合并道路网络。"""
     ensure_cache_dirs()
     tiles = split_bbox(bbox)
-    graphs = []
+    merged_graph = None
     stats = create_cache_stats(len(tiles))
 
     for index, tile in enumerate(tiles, start=1):
@@ -383,9 +393,11 @@ def fetch_graph_for_bbox(
             graph = ox.load_graphml(cache_path)
             stats["hits"] += 1
         else:
+            print_progress(f"道路网络分块 {index}/{len(tiles)} 未命中缓存，开始远程获取（可能较慢）")
             graph = None
 
             for attempt in range(1, ROAD_FETCH_RETRIES + 1):
+                started_at = time.time()
                 try:
                     graph = ox.graph_from_bbox(
                         tile,
@@ -393,6 +405,10 @@ def fetch_graph_for_bbox(
                         simplify=True,
                         retain_all=True,
                         truncate_by_edge=True,
+                    )
+                    elapsed = time.time() - started_at
+                    print_progress(
+                        f"道路网络分块 {index}/{len(tiles)} 远程获取完成，耗时 {elapsed:.1f} 秒"
                     )
                     break
                 except Exception as error:
@@ -410,17 +426,18 @@ def fetch_graph_for_bbox(
             ox.save_graphml(graph, cache_path)
             stats["fetched"] += 1
 
-        graphs.append(graph)
+        if merged_graph is None:
+            merged_graph = graph
+        else:
+            merged_graph = nx.compose(merged_graph, graph)
+            del graph
+            gc.collect()
 
-    if not graphs:
+    if merged_graph is None:
         raise ValueError("未获取到任何道路网络数据")
 
-    if len(graphs) == 1:
-        print_cache_stats("道路网络", stats)
-        return graphs[0]
-
     print_cache_stats("道路网络", stats)
-    return nx.compose_all(graphs)
+    return merged_graph
 
 
 def fetch_features_for_bbox(
@@ -432,7 +449,7 @@ def fetch_features_for_bbox(
     """按分块查询并合并面状地物。"""
     ensure_cache_dirs()
     tiles = split_bbox(bbox)
-    frames = []
+    merged = None
     stats = create_cache_stats(len(tiles))
 
     for index, tile in enumerate(tiles, start=1):
@@ -445,7 +462,10 @@ def fetch_features_for_bbox(
             print_progress(f"{label}分块 {index}/{len(tiles)} 命中缓存")
             features = gpd.read_file(cache_path)
             stats["hits"] += 1
+            polygon_features = filter_polygon_features(features)
         else:
+            print_progress(f"{label}分块 {index}/{len(tiles)} 未命中缓存，开始远程获取（可能较慢）")
+            started_at = time.time()
             try:
                 features = ox.features_from_bbox(tile, tags)
             except Exception as error:
@@ -453,25 +473,35 @@ def fetch_features_for_bbox(
                 stats["failed"] += 1
                 continue
 
+            elapsed = time.time() - started_at
+            print_progress(f"{label}分块 {index}/{len(tiles)} 远程获取完成，耗时 {elapsed:.1f} 秒")
+
             polygon_features = filter_polygon_features(features)
 
             if polygon_features is not None:
                 polygon_features.to_file(cache_path, driver="GeoJSON")
-                frames.append(polygon_features)
                 stats["fetched"] += 1
+            else:
+                continue
 
+        if polygon_features is None:
             continue
 
-        polygon_features = filter_polygon_features(features)
+        if merged is None:
+            merged = polygon_features.copy()
+        else:
+            merged = gpd.GeoDataFrame(
+                pd.concat([merged, polygon_features], ignore_index=True),
+                geometry="geometry",
+                crs=merged.crs,
+            )
 
-        if polygon_features is not None:
-            frames.append(polygon_features)
+        del polygon_features
+        gc.collect()
 
-    if not frames:
+    if merged is None:
         print_cache_stats(label, stats)
         return None
-
-    merged = gpd.GeoDataFrame(pd.concat(frames), geometry="geometry", crs=frames[0].crs)
 
     dedup_columns = [column for column in ["element", "id"] if column in merged.columns]
     if dedup_columns:
@@ -512,19 +542,23 @@ def render_poster(
     ox.settings.log_console = False
     ox.settings.requests_timeout = 180
 
-    print_progress("正在获取道路网络...")
+    print_progress("正在获取道路网络，首次生成或新区域可能需要较长时间...")
     graph = fetch_graph_for_bbox(query_bbox, network_type)
     graph_proj = ox.project_graph(graph)
+    del graph
+    gc.collect()
 
-    print_progress("正在获取水域与绿地区域...")
+    print_progress("正在获取水域与绿地区域，首次生成或新区域可能需要较长时间...")
     water = fetch_features_for_bbox(query_bbox, WATER_TAGS, "水域", "water")
     parks = fetch_features_for_bbox(query_bbox, PARK_TAGS, "绿地", "parks")
 
     if water is not None:
         water = ox.projection.project_gdf(water, to_crs=graph_proj.graph["crs"])
+        gc.collect()
 
     if parks is not None:
         parks = ox.projection.project_gdf(parks, to_crs=graph_proj.graph["crs"])
+        gc.collect()
 
     fig, ax = plt.subplots(figsize=(width, height), dpi=300)
     fig.patch.set_facecolor(theme["bg"])
@@ -577,6 +611,8 @@ def render_poster(
 
     plt.savefig(themed_output_path, dpi=300, bbox_inches="tight", pad_inches=0)
     plt.close(fig)
+    del graph_proj
+    gc.collect()
 
     return {
         "success": True,
