@@ -296,15 +296,15 @@ def get_edge_widths_by_type(graph) -> List[float]:
             highway = highway[0] if highway else "unclassified"
 
         if highway in ["motorway", "motorway_link"]:
-            width = 1.25
-        elif highway in ["trunk", "trunk_link", "primary", "primary_link"]:
-            width = 1.0
-        elif highway in ["secondary", "secondary_link"]:
             width = 0.75
+        elif highway in ["trunk", "trunk_link", "primary", "primary_link"]:
+            width = 0.6
+        elif highway in ["secondary", "secondary_link"]:
+            width = 0.45
         elif highway in ["tertiary", "tertiary_link"]:
-            width = 0.55
+            width = 0.33
         else:
-            width = 0.35
+            width = 0.21
 
         edge_widths.append(width)
 
