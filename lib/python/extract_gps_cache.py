@@ -8,7 +8,13 @@ import sys
 import traceback
 from typing import List, Tuple
 
-from fit_utils import print_progress, extract_gps_data
+from fit_utils import (
+    extract_gps_data,
+    get_ride_id_from_fit_path,
+    load_persistent_gps_cache,
+    print_progress,
+    save_persistent_gps_cache,
+)
 
 
 def main():
@@ -26,7 +32,16 @@ def main():
         for i, fit_file in enumerate(args.fit_files, 1):
             print_progress(f"正在提取 GPS 数据 {i}/{total} ...")
 
-            gps_data = extract_gps_data(fit_file)
+            ride_id = get_ride_id_from_fit_path(fit_file)
+            gps_data = load_persistent_gps_cache(ride_id) if ride_id else None
+
+            if gps_data:
+                print_progress(f"活动 {ride_id} 命中 GPS 持久缓存")
+            else:
+                gps_data = extract_gps_data(fit_file)
+                if gps_data and ride_id:
+                    save_persistent_gps_cache(ride_id, fit_file, gps_data)
+                    print_progress(f"活动 {ride_id} 已写入 GPS 持久缓存")
 
             if gps_data:
                 cache.append(

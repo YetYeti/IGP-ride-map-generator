@@ -29,7 +29,7 @@ from pyproj import Transformer
 from fit_utils import print_progress, extract_gps_data, load_gps_cache
 
 TRACK_COLOR = "#F1532E"
-DEFAULT_TRACK_WIDTH = 1.6
+DEFAULT_TRACK_WIDTH = 0.8
 DEFAULT_TRACK_OPACITY = 0.82
 DEFAULT_PADDING = 0.1
 DEFAULT_QUERY_PADDING = 0.18

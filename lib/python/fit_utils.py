@@ -3,9 +3,13 @@
 import json
 import os
 import sys
+from pathlib import Path
 from typing import Dict, List, Tuple
 
 import fitparse
+
+PROJECT_ROOT = Path(os.environ.get("PROJECT_ROOT") or os.getcwd()).resolve()
+GPS_CACHE_DIR = PROJECT_ROOT / "cache" / "gps"
 
 
 def print_progress(message: str):
@@ -49,3 +53,43 @@ def load_gps_cache(cache_path: str) -> Dict[str, List[Tuple[float, float]]]:
             cache[os.path.abspath(file_path)] = [(p[0], p[1]) for p in points]
 
     return cache
+
+
+def get_persistent_gps_cache_path(ride_id: str) -> Path:
+    """根据 rideId 获取持久 GPS 缓存路径。"""
+    return GPS_CACHE_DIR / f"{ride_id}.json"
+
+
+def get_ride_id_from_fit_path(fit_file_path: str) -> str | None:
+    """从 FIT 文件路径推导 rideId。"""
+    ride_id = Path(fit_file_path).stem.strip()
+    return ride_id if ride_id.isdigit() else None
+
+
+def load_persistent_gps_cache(ride_id: str) -> List[Tuple[float, float]] | None:
+    """加载按 rideId 持久化的 GPS 缓存。"""
+    cache_path = get_persistent_gps_cache_path(ride_id)
+    if not cache_path.exists():
+        return None
+
+    try:
+        payload = json.loads(cache_path.read_text(encoding="utf-8"))
+        points = payload.get("points", [])
+        if not points:
+            return None
+        return [(point[0], point[1]) for point in points]
+    except Exception as error:
+        print_progress(f"读取 GPS 持久缓存失败 {ride_id}: {error}")
+        return None
+
+
+def save_persistent_gps_cache(ride_id: str, fit_file_path: str, points: List[Tuple[float, float]]):
+    """保存按 rideId 持久化的 GPS 缓存。"""
+    GPS_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    cache_path = get_persistent_gps_cache_path(ride_id)
+    payload = {
+        "ride_id": ride_id,
+        "file": os.path.abspath(fit_file_path),
+        "points": points,
+    }
+    cache_path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
