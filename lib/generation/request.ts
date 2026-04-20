@@ -27,10 +27,6 @@ export function parseGenerationTaskRequest(body: unknown): {
     return { error: '请求体格式错误' }
   }
 
-  const credentialsValue = body.credentials
-  const username = isRecord(credentialsValue) ? credentialsValue.username : undefined
-  const password = isRecord(credentialsValue) ? credentialsValue.password : undefined
-
   const initialRequest = createInitialTaskRequest()
 
   if (body.filters !== undefined) {
@@ -73,13 +69,6 @@ export function parseGenerationTaskRequest(body: unknown): {
     initialRequest.outputs.combinedMap = combinedMap
     initialRequest.outputs.overlayMap = overlayMap
     initialRequest.outputs.poster = poster
-  }
-
-  if (typeof username === 'string' && username.trim() !== '' && typeof password === 'string') {
-    initialRequest.credentials = {
-      username: username.trim(),
-      password,
-    }
   }
 
   return { request: initialRequest }

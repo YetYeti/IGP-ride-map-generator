@@ -6,54 +6,6 @@ import type {
   PosterOutputConfig,
 } from '@/lib/generation/types'
 
-export function syncRequestCredentials(
-  request: GenerationTaskRequest,
-  username: string,
-  password: string
-): GenerationTaskRequest {
-  if (
-    request.credentials.username === username &&
-    request.credentials.password === password
-  ) {
-    return request
-  }
-
-  return {
-    ...request,
-    credentials: {
-      ...request.credentials,
-      username,
-      password,
-    },
-  }
-}
-
-export function updateRequestUsername(
-  request: GenerationTaskRequest,
-  username: string
-): GenerationTaskRequest {
-  return {
-    ...request,
-    credentials: {
-      ...request.credentials,
-      username,
-    },
-  }
-}
-
-export function updateRequestPassword(
-  request: GenerationTaskRequest,
-  password: string
-): GenerationTaskRequest {
-  return {
-    ...request,
-    credentials: {
-      ...request.credentials,
-      password,
-    },
-  }
-}
-
 export function updateRequestYear(
   request: GenerationTaskRequest,
   year: number | 'all'
@@ -145,15 +97,4 @@ export function getAvailableYears(currentYear: number, count: number = 10): numb
   }
 
   return years
-}
-
-export function canSubmitRequest(
-  request: GenerationTaskRequest,
-  loading: boolean
-): boolean {
-  return (
-    !loading &&
-    request.credentials.username.trim() !== '' &&
-    request.credentials.password.trim() !== ''
-  )
 }

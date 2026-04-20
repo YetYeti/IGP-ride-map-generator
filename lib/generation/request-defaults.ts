@@ -41,10 +41,6 @@ export const LAYOUT_PRESETS: CombinedMapLayoutPreset[] = ['compact', 'standard',
 
 export function createInitialTaskRequest(): GenerationTaskRequest {
   return {
-    credentials: {
-      username: '',
-      password: '',
-    },
     filters: {
       year: 'all',
     },

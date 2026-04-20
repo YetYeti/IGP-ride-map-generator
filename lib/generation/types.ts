@@ -89,10 +89,6 @@ export interface AccountSessionResponse {
 }
 
 export interface GenerationTaskRequest {
-  credentials: {
-    username: string
-    password: string
-  }
   filters: {
     year: number | 'all'
   }
