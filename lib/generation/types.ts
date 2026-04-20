@@ -67,10 +67,6 @@ export interface PosterActivityOption {
   distanceText: string
 }
 
-export interface PosterActivityOptionsResponse {
-  activities: PosterActivityOption[]
-}
-
 export type AccountSessionStatus =
   | 'logged_out'
   | 'logging_in'

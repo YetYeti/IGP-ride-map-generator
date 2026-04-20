@@ -10,6 +10,7 @@ interface AccountSessionState {
   status: AccountSessionStatus
   username: string | null
   password: string | null
+  warmupRunId: number
   progress: number
   totalActivityCount: number
   outdoorActivityCount: number
@@ -28,8 +29,9 @@ function createInitialAccountSessionState(): AccountSessionState {
   return {
     status: 'logged_out',
     username: null,
-    password: null,
-    progress: 0,
+  password: null,
+  warmupRunId: 0,
+  progress: 0,
     totalActivityCount: 0,
     outdoorActivityCount: 0,
     activities: [],
@@ -79,6 +81,31 @@ export function getAccountSessionCredentials():
   }
 }
 
+export function beginWarmupRun(): {
+  runId: number
+  credentials: { username: string; password: string } | null
+  activities: Activity[]
+} {
+  accountSession.warmupRunId += 1
+  touchSession()
+
+  return {
+    runId: accountSession.warmupRunId,
+    credentials:
+      accountSession.username && accountSession.password
+        ? {
+            username: accountSession.username,
+            password: accountSession.password,
+          }
+        : null,
+    activities: [...accountSession.activities],
+  }
+}
+
+export function isWarmupRunCurrent(runId: number): boolean {
+  return accountSession.warmupRunId === runId
+}
+
 export function getAccountSessionActivities(): Activity[] {
   return [...accountSession.activities]
 }
@@ -103,6 +130,7 @@ export function beginAccountLogin(username: string, password: string) {
   accountSession.status = 'logging_in'
   accountSession.username = username
   accountSession.password = password
+  accountSession.warmupRunId += 1
   accountSession.progress = 5
   accountSession.totalActivityCount = 0
   accountSession.outdoorActivityCount = 0
@@ -136,6 +164,7 @@ export function completeAccountSession(
 export function failAccountSession(error: string) {
   accountSession.status = 'failed'
   accountSession.progress = 0
+  accountSession.warmupRunId += 1
   accountSession.totalActivityCount = 0
   accountSession.outdoorActivityCount = 0
   accountSession.activities = []
@@ -149,6 +178,7 @@ export function clearAccountSession() {
   accountSession.status = 'logged_out'
   accountSession.username = null
   accountSession.password = null
+  accountSession.warmupRunId += 1
   accountSession.progress = 0
   accountSession.totalActivityCount = 0
   accountSession.outdoorActivityCount = 0

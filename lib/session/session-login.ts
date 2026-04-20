@@ -9,6 +9,7 @@ import {
   failAccountSession,
   setAccountSessionLoadingActivities,
 } from '@/lib/session/session-store'
+import { startSessionWarmup } from '@/lib/session/session-warmup'
 
 let currentLoginRunId = 0
 
@@ -42,6 +43,7 @@ async function runAccountLogin(loginRunId: number, username: string, password: s
 
     const outdoorActivities = filterOutdoorActivities(activities)
     completeAccountSession(activities.length, outdoorActivities)
+    startSessionWarmup()
   } catch (error: unknown) {
     if (loginRunId !== currentLoginRunId) {
       return

@@ -2,8 +2,6 @@ import type {
   CreateGenerationTaskResponse,
   GenerationTask,
   GenerationTaskRequest,
-  PosterActivityOption,
-  PosterActivityOptionsResponse,
 } from '@/lib/generation/types'
 
 export async function createGenerationTask(request: GenerationTaskRequest): Promise<GenerationTask> {
@@ -44,24 +42,4 @@ export async function fetchGenerationTask(taskId: string): Promise<GenerationTas
   }
 
   return nextTask
-}
-
-export async function fetchPosterActivityOptions(
-  request: Pick<GenerationTaskRequest, 'credentials' | 'filters'>
-): Promise<PosterActivityOption[]> {
-  const response = await fetch('/api/activities', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(request),
-  })
-
-  const data = (await response.json()) as PosterActivityOptionsResponse & { error?: string }
-
-  if (!response.ok || !Array.isArray(data.activities)) {
-    throw new Error(data.error ?? '获取活动列表失败')
-  }
-
-  return data.activities
 }
