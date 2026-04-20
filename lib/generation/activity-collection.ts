@@ -1,5 +1,9 @@
 import { updateRequestedOutputsProgress } from '@/lib/generation/output-progress'
 import {
+  filterActivitiesByYear,
+  filterOutdoorActivities,
+} from '@/lib/generation/activity-filtering'
+import {
   appendTaskLog,
   setTaskFailed,
   setTaskProgress,
@@ -25,7 +29,7 @@ export async function collectFilteredActivities(
     updateRequestedOutputsProgress(taskId, request, Math.min(24, 12 + page * 2), 'pending')
   })
 
-  const outdoorActivities = activities.filter((activity) => activity.Title !== '室内骑行')
+  const outdoorActivities = filterOutdoorActivities(activities)
   const filteredActivities = filterActivitiesByYear(outdoorActivities, request.filters.year)
 
   updateTaskStats(taskId, {
@@ -48,12 +52,4 @@ export async function collectFilteredActivities(
   updateRequestedOutputsProgress(taskId, request, 30, 'pending')
 
   return filteredActivities
-}
-
-function filterActivitiesByYear(activities: Activity[], selectedYear: number | 'all'): Activity[] {
-  if (selectedYear === 'all') {
-    return [...activities]
-  }
-
-  return activities.filter((activity) => activity.start_time.getFullYear() === selectedYear)
 }

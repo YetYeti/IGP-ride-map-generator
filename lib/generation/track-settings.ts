@@ -2,6 +2,7 @@ import type {
   CombinedMapLayoutPreset,
   CombinedMapOutputConfig,
   OverlayMapOutputConfig,
+  PosterActivityMode,
   PosterAspectRatio,
   PosterOutputConfig,
 } from '@/lib/generation/types'
@@ -164,5 +165,25 @@ export function updatePosterAspectRatio(
   return {
     ...poster,
     aspectRatio,
+  }
+}
+
+export function updatePosterActivityMode(
+  poster: PosterOutputConfig,
+  activityMode: PosterActivityMode
+): PosterOutputConfig {
+  return {
+    ...poster,
+    activityMode,
+  }
+}
+
+export function updatePosterSelectedRideId(
+  poster: PosterOutputConfig,
+  selectedRideId: number | null
+): PosterOutputConfig {
+  return {
+    ...poster,
+    selectedRideId,
   }
 }

@@ -4,6 +4,8 @@ interface ActivityPayload extends Record<string, unknown> {
   RideId?: unknown
   MemberId?: unknown
   Title?: unknown
+  RideDistance?: unknown
+  RecordTime?: unknown
 }
 
 const DATE_FIELDS = ['StartTime', 'start_time', 'BeginTime', 'beginTime', 'Date', 'date']
@@ -32,9 +34,9 @@ export function mapActivityItem(data: ActivityPayload): Activity {
     total_ascent: 0,
     total_descent: 0,
     total_calories: 0,
-    total_distance: 0,
-    total_elapsed_time: 0,
-    total_moving_time: 0,
+    total_distance: parseActivityDistance(data),
+    total_elapsed_time: parseActivityDuration(data),
+    total_moving_time: parseActivityDuration(data),
     avg_cadence: 0,
     max_cadence: 0,
     avg_heart_rate: 0,
@@ -61,6 +63,44 @@ function parseActivityDate(data: Record<string, unknown>): Date {
   }
 
   return new Date()
+}
+
+function parseActivityDistance(data: Record<string, unknown>): number {
+  const value = data.RideDistance
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value * 1000
+  }
+
+  if (typeof value === 'string') {
+    const parsed = Number.parseFloat(value)
+    if (Number.isFinite(parsed)) {
+      return parsed * 1000
+    }
+  }
+
+  return 0
+}
+
+function parseActivityDuration(data: Record<string, unknown>): number {
+  const value = data.RecordTime
+  if (typeof value !== 'string' || value.trim() === '') {
+    return 0
+  }
+
+  const hours = extractDurationPart(value, /(\d+)\s*时/)
+  const minutes = extractDurationPart(value, /(\d+)\s*分/)
+  const seconds = extractDurationPart(value, /(\d+)\s*秒/)
+
+  return hours * 3600 + minutes * 60 + seconds
+}
+
+function extractDurationPart(value: string, pattern: RegExp): number {
+  const match = value.match(pattern)
+  if (!match) {
+    return 0
+  }
+
+  return Number.parseInt(match[1], 10) || 0
 }
 
 function isRecord(value: unknown): value is ActivityPayload {

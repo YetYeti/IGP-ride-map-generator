@@ -78,6 +78,10 @@ export function parseGenerationTaskRequest(body: unknown): {
       return { error: 'poster 配置无效' }
     }
 
+    if (poster.enabled && poster.activityMode === 'single' && poster.selectedRideId === null) {
+      return { error: '海报单活动模式必须选择一个活动' }
+    }
+
     initialRequest.outputs.combinedMap = combinedMap
     initialRequest.outputs.overlayMap = overlayMap
     initialRequest.outputs.poster = poster

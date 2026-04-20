@@ -2,6 +2,7 @@ import type {
   CombinedMapOutputConfig,
   GenerationTaskRequest,
   OverlayMapOutputConfig,
+  PosterActivityMode,
   PosterOutputConfig,
 } from '@/lib/generation/types'
 
@@ -100,6 +101,38 @@ export function updateRequestPoster(
     outputs: {
       ...request.outputs,
       poster,
+    },
+  }
+}
+
+export function updateRequestPosterActivityMode(
+  request: GenerationTaskRequest,
+  activityMode: PosterActivityMode
+): GenerationTaskRequest {
+  return {
+    ...request,
+    outputs: {
+      ...request.outputs,
+      poster: {
+        ...request.outputs.poster,
+        activityMode,
+      },
+    },
+  }
+}
+
+export function updateRequestPosterRideId(
+  request: GenerationTaskRequest,
+  selectedRideId: number | null
+): GenerationTaskRequest {
+  return {
+    ...request,
+    outputs: {
+      ...request.outputs,
+      poster: {
+        ...request.outputs.poster,
+        selectedRideId,
+      },
     },
   }
 }

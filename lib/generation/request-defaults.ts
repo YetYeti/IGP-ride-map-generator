@@ -25,6 +25,8 @@ export const DEFAULT_OVERLAY_MAP_OUTPUT: OverlayMapOutputConfig = {
 export const DEFAULT_POSTER_OUTPUT: PosterOutputConfig = {
   enabled: true,
   aspectRatio: '9:16',
+  activityMode: 'all',
+  selectedRideId: null,
 }
 
 export const POSTER_ASPECT_RATIOS: { value: PosterAspectRatio; label: string }[] = [

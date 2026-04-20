@@ -7,6 +7,7 @@ import {
 import { isRecord, parseNumber } from '@/lib/generation/request-parsing'
 import { MapStyles } from '@/lib/map-styles'
 import type {
+  PosterActivityMode,
   CombinedMapLayoutPreset,
   CombinedMapOutputConfig,
   OverlayMapOutputConfig,
@@ -82,10 +83,23 @@ export function parsePosterOutput(value: unknown): PosterOutputConfig | null {
   const aspectRatio = isPosterAspectRatio(value.aspectRatio)
     ? value.aspectRatio
     : DEFAULT_POSTER_OUTPUT.aspectRatio
+  const activityMode = isPosterActivityMode(value.activityMode)
+    ? value.activityMode
+    : DEFAULT_POSTER_OUTPUT.activityMode
+  const selectedRideId = parsePosterRideId(value.selectedRideId)
+
+  if (!selectedRideId.valid) {
+    return null
+  }
 
   return {
     enabled,
     aspectRatio,
+    activityMode,
+    selectedRideId:
+      selectedRideId.value === undefined
+        ? DEFAULT_POSTER_OUTPUT.selectedRideId
+        : selectedRideId.value,
   }
 }
 
@@ -98,7 +112,34 @@ function isLayoutPreset(value: unknown): value is CombinedMapLayoutPreset {
 }
 
 const VALID_ASPECT_RATIOS: PosterAspectRatio[] = ['9:16', '3:4', '1:1', '4:3', '16:9']
+const VALID_POSTER_ACTIVITY_MODES: PosterActivityMode[] = ['all', 'single']
 
 function isPosterAspectRatio(value: unknown): value is PosterAspectRatio {
   return typeof value === 'string' && VALID_ASPECT_RATIOS.includes(value as PosterAspectRatio)
+}
+
+function isPosterActivityMode(value: unknown): value is PosterActivityMode {
+  return (
+    typeof value === 'string' &&
+    VALID_POSTER_ACTIVITY_MODES.includes(value as PosterActivityMode)
+  )
+}
+
+function parsePosterRideId(value: unknown): {
+  valid: boolean
+  value: number | null | undefined
+} {
+  if (value === undefined) {
+    return { valid: true, value: undefined }
+  }
+
+  if (value === null) {
+    return { valid: true, value: null }
+  }
+
+  if (typeof value === 'number' && Number.isInteger(value) && value > 0) {
+    return { valid: true, value }
+  }
+
+  return { valid: false, value: undefined }
 }

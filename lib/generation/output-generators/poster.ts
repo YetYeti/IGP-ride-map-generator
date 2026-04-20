@@ -42,7 +42,18 @@ export async function generatePosterArtifact(
   const scriptPath = path.join(process.cwd(), 'lib/python/generate_track_art_poster.py')
   const fitListPath = path.join(tempDir, `poster_fit_list_${taskId}.txt`)
   const outputPath = path.join(tempDir, `track_art_poster_${taskId}.png`)
-  const fitFilePaths = processedActivities.map((activity) => getFitFilePath(activity.RideId))
+  const posterActivities = getPosterActivities(processedActivities, config)
+
+  if (posterActivities.length === 0) {
+    appendTaskLog(taskId, '生成轨迹海报失败: 未找到所选活动', 'error')
+    updateTaskOutputProgress(taskId, 'poster', {
+      status: 'failed',
+      progress: 5,
+    })
+    return
+  }
+
+  const fitFilePaths = posterActivities.map((activity) => getFitFilePath(activity.RideId))
 
   try {
     await fs.writeFile(fitListPath, `${fitFilePaths.join('\n')}\n`, 'utf-8')
@@ -79,7 +90,7 @@ export async function generatePosterArtifact(
 
     appendTaskLog(
       taskId,
-      `轨迹海报已生成: ${filename} (${pythonResult.totalTracks ?? processedActivities.length} 个轨迹)`,
+      `轨迹海报已生成: ${filename} (${pythonResult.totalTracks ?? posterActivities.length} 个轨迹)`,
       'success'
     )
     updateTaskOutputProgress(taskId, 'poster', {
@@ -93,4 +104,15 @@ export async function generatePosterArtifact(
       progress: 5,
     })
   }
+}
+
+function getPosterActivities(
+  processedActivities: Activity[],
+  config: PosterOutputConfig
+): Activity[] {
+  if (config.activityMode !== 'single' || config.selectedRideId === null) {
+    return processedActivities
+  }
+
+  return processedActivities.filter((activity) => activity.RideId === config.selectedRideId)
 }

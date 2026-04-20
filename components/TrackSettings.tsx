@@ -4,6 +4,7 @@ import React from 'react'
 import { CombinedMapLayoutSection } from '@/components/track-settings/CombinedMapLayoutSection'
 import { GenerationOptionsSection } from '@/components/track-settings/GenerationOptionsSection'
 import { OverlayMapStyleSection } from '@/components/track-settings/OverlayMapStyleSection'
+import { PosterActivitySection } from '@/components/track-settings/PosterActivitySection'
 import { PosterAspectRatioSection } from '@/components/track-settings/PosterAspectRatioSection'
 import {
   applyCombinedMapLayoutPreset,
@@ -13,12 +14,15 @@ import {
   togglePoster,
   updateCombinedMapSetting,
   updateOverlayMapStyle,
+  updatePosterActivityMode,
   updatePosterAspectRatio,
+  updatePosterSelectedRideId,
 } from '@/lib/generation/track-settings'
 import type {
   CombinedMapLayoutPreset,
   CombinedMapOutputConfig,
   OverlayMapOutputConfig,
+  PosterActivityOption,
   PosterOutputConfig,
 } from '@/lib/generation/types'
 
@@ -26,6 +30,9 @@ interface TrackSettingsProps {
   combinedMap: CombinedMapOutputConfig
   overlayMap: OverlayMapOutputConfig
   poster: PosterOutputConfig
+  posterActivityOptions: PosterActivityOption[]
+  posterActivityOptionsLoading: boolean
+  posterActivityOptionsError: string | null
   onCombinedMapChange: (settings: CombinedMapOutputConfig) => void
   onOverlayMapChange: (settings: OverlayMapOutputConfig) => void
   onPosterChange: (settings: PosterOutputConfig) => void
@@ -35,6 +42,9 @@ export function TrackSettings({
   combinedMap,
   overlayMap,
   poster,
+  posterActivityOptions,
+  posterActivityOptionsLoading,
+  posterActivityOptionsError,
   onCombinedMapChange,
   onOverlayMapChange,
   onPosterChange,
@@ -74,12 +84,27 @@ export function TrackSettings({
       )}
 
       {poster.enabled && (
-        <PosterAspectRatioSection
-          poster={poster}
-          onAspectRatioChange={(aspectRatio) =>
-            onPosterChange(updatePosterAspectRatio(poster, aspectRatio))
-          }
-        />
+        <>
+          <PosterAspectRatioSection
+            poster={poster}
+            onAspectRatioChange={(aspectRatio) =>
+              onPosterChange(updatePosterAspectRatio(poster, aspectRatio))
+            }
+          />
+
+          <PosterActivitySection
+            poster={poster}
+            activityOptions={posterActivityOptions}
+            activityOptionsLoading={posterActivityOptionsLoading}
+            activityOptionsError={posterActivityOptionsError}
+            onActivityModeChange={(activityMode) =>
+              onPosterChange(updatePosterActivityMode(poster, activityMode))
+            }
+            onSelectedRideIdChange={(rideId) =>
+              onPosterChange(updatePosterSelectedRideId(poster, rideId))
+            }
+          />
+        </>
       )}
     </div>
   )

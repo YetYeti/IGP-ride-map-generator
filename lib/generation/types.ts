@@ -48,10 +48,25 @@ export interface OverlayMapOutputConfig {
 }
 
 export type PosterAspectRatio = '9:16' | '3:4' | '1:1' | '4:3' | '16:9'
+export type PosterActivityMode = 'all' | 'single'
 
 export interface PosterOutputConfig {
   enabled: boolean
   aspectRatio: PosterAspectRatio
+  activityMode: PosterActivityMode
+  selectedRideId: number | null
+}
+
+export interface PosterActivityOption {
+  rideId: number
+  label: string
+  startTime: string
+  durationText: string
+  distanceText: string
+}
+
+export interface PosterActivityOptionsResponse {
+  activities: PosterActivityOption[]
 }
 
 export interface GenerationTaskRequest {
