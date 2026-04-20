@@ -4,7 +4,6 @@ import React from 'react'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
-import { useCredentialAutofillSync } from '@/hooks/useCredentialAutofillSync'
 import type { AccountSessionSummary } from '@/lib/generation/types'
 
 interface AccountSessionCardProps {
@@ -20,10 +19,6 @@ export function AccountSessionCard({
   onLogin,
   onLogout,
 }: AccountSessionCardProps) {
-  const [credentials, setCredentials] = React.useState({
-    username: '',
-    password: '',
-  })
   const [fieldErrors, setFieldErrors] = React.useState({
     username: '',
     password: '',
@@ -32,17 +27,9 @@ export function AccountSessionCard({
   const usernameInputRef = React.useRef<HTMLInputElement | null>(null)
   const passwordInputRef = React.useRef<HTMLInputElement | null>(null)
 
-  useCredentialAutofillSync({
-    usernameInputRef,
-    passwordInputRef,
-    onSync: (username, password) => {
-      setCredentials({ username, password })
-    },
-  })
-
   const handleLogin = async () => {
-    const username = usernameInputRef.current?.value ?? credentials.username
-    const password = passwordInputRef.current?.value ?? credentials.password
+    const username = usernameInputRef.current?.value ?? ''
+    const password = passwordInputRef.current?.value ?? ''
     const nextErrors = {
       username: username.trim() === '' ? '请输入账号' : '',
       password: password.trim() === '' ? '请输入密码' : '',
@@ -57,7 +44,6 @@ export function AccountSessionCard({
     setSubmitting(true)
     try {
       await onLogin(username, password)
-      setCredentials({ username, password })
     } finally {
       setSubmitting(false)
     }
@@ -154,17 +140,12 @@ export function AccountSessionCard({
                   name="username"
                   autoComplete="username"
                   placeholder="请输入您的 IGPSPORT 账号"
-                  value={credentials.username}
                   className={
                     fieldErrors.username
                       ? 'border-red-500 text-red-600 placeholder:text-red-500 focus-visible:ring-red-400'
                       : ''
                   }
-                  onChange={(e) => {
-                    const username = e.currentTarget.value
-                    setFieldErrors((prev) => ({ ...prev, username: '' }))
-                    setCredentials((prev) => ({ ...prev, username }))
-                  }}
+                  onChange={() => setFieldErrors((prev) => ({ ...prev, username: '' }))}
                   onKeyDown={handleCredentialKeyDown}
                   onFocus={() => setFieldErrors((prev) => ({ ...prev, username: '' }))}
                   disabled={isBusy}
@@ -177,17 +158,12 @@ export function AccountSessionCard({
                   name="password"
                   autoComplete="current-password"
                   placeholder="请输入您的密码"
-                  value={credentials.password}
                   className={
                     fieldErrors.password
                       ? 'border-red-500 text-red-600 placeholder:text-red-500 focus-visible:ring-red-400'
                       : ''
                   }
-                  onChange={(e) => {
-                    const password = e.currentTarget.value
-                    setFieldErrors((prev) => ({ ...prev, password: '' }))
-                    setCredentials((prev) => ({ ...prev, password }))
-                  }}
+                  onChange={() => setFieldErrors((prev) => ({ ...prev, password: '' }))}
                   onKeyDown={handleCredentialKeyDown}
                   onFocus={() => setFieldErrors((prev) => ({ ...prev, password: '' }))}
                   disabled={isBusy}
