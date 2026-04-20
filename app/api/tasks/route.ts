@@ -7,7 +7,10 @@ import {
 } from '@/lib/generation/task-route'
 import { startTaskRun } from '@/lib/generation/task-runner'
 import { createTask, getRunningTaskCount } from '@/lib/generation/task-store'
-import { getAccountSessionCredentials } from '@/lib/session/session-store'
+import {
+  getAccountSessionActivitySnapshot,
+  getAccountSessionCredentials,
+} from '@/lib/session/session-store'
 
 const MAX_CONCURRENT_TASKS = 3
 
@@ -35,8 +38,16 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    const sessionActivitySnapshot = getAccountSessionActivitySnapshot()
+    if (!sessionActivitySnapshot) {
+      return NextResponse.json(
+        { error: '当前账号活动数据不可用，请重新登录' },
+        { status: 409 }
+      )
+    }
+
     const task = createTask()
-    startTaskRun(task.id, request, credentials)
+    startTaskRun(task.id, request, credentials, sessionActivitySnapshot)
 
     return acceptedTaskResponse(task)
   } catch (error: unknown) {

@@ -25,9 +25,14 @@ import type { GenerationTaskRequest } from '@/lib/generation/types'
 export function startTaskRun(
   taskId: string,
   request: GenerationTaskRequest,
-  credentials: { username: string; password: string }
+  credentials: { username: string; password: string },
+  sessionActivitySnapshot: {
+    totalActivityCount: number
+    outdoorActivityCount: number
+    activities: Activity[]
+  }
 ) {
-  void runTask(taskId, request, credentials).catch((error: unknown) => {
+  void runTask(taskId, request, credentials, sessionActivitySnapshot).catch((error: unknown) => {
     const errorMessage = getErrorMessage(error)
     console.error('任务执行失败:', error)
     appendTaskLog(taskId, `处理失败: ${errorMessage}`, 'error')
@@ -38,7 +43,12 @@ export function startTaskRun(
 async function runTask(
   taskId: string,
   request: GenerationTaskRequest,
-  credentials: { username: string; password: string }
+  credentials: { username: string; password: string },
+  sessionActivitySnapshot: {
+    totalActivityCount: number
+    outdoorActivityCount: number
+    activities: Activity[]
+  }
 ) {
   const client = new IGPSPORTClient()
   const tempDir = ensureTempDir()
@@ -56,7 +66,13 @@ async function runTask(
 
   cleanupExpiredFiles()
 
-  const filteredActivities = await collectFilteredActivities(taskId, client, request, credentials)
+  const filteredActivities = await collectFilteredActivities(
+    taskId,
+    client,
+    request,
+    credentials,
+    sessionActivitySnapshot
+  )
   if (!filteredActivities) {
     return
   }

@@ -11,6 +11,7 @@ interface AccountSessionState {
   username: string | null
   password: string | null
   progress: number
+  totalActivityCount: number
   outdoorActivityCount: number
   activities: Activity[]
   activityOptions: PosterActivityOption[]
@@ -18,16 +19,31 @@ interface AccountSessionState {
   updatedAt: string | null
 }
 
-const accountSession: AccountSessionState = {
-  status: 'logged_out',
-  username: null,
-  password: null,
-  progress: 0,
-  outdoorActivityCount: 0,
-  activities: [],
-  activityOptions: [],
-  error: null,
-  updatedAt: null,
+declare global {
+  // eslint-disable-next-line no-var
+  var __igpsportAccountSession: AccountSessionState | undefined
+}
+
+function createInitialAccountSessionState(): AccountSessionState {
+  return {
+    status: 'logged_out',
+    username: null,
+    password: null,
+    progress: 0,
+    totalActivityCount: 0,
+    outdoorActivityCount: 0,
+    activities: [],
+    activityOptions: [],
+    error: null,
+    updatedAt: null,
+  }
+}
+
+const accountSession =
+  globalThis.__igpsportAccountSession ?? createInitialAccountSessionState()
+
+if (!globalThis.__igpsportAccountSession) {
+  globalThis.__igpsportAccountSession = accountSession
 }
 
 function touchSession() {
@@ -67,11 +83,28 @@ export function getAccountSessionActivities(): Activity[] {
   return [...accountSession.activities]
 }
 
+export function getAccountSessionActivitySnapshot(): {
+  totalActivityCount: number
+  outdoorActivityCount: number
+  activities: Activity[]
+} | null {
+  if (accountSession.status !== 'ready') {
+    return null
+  }
+
+  return {
+    totalActivityCount: accountSession.totalActivityCount,
+    outdoorActivityCount: accountSession.outdoorActivityCount,
+    activities: [...accountSession.activities],
+  }
+}
+
 export function beginAccountLogin(username: string, password: string) {
   accountSession.status = 'logging_in'
   accountSession.username = username
   accountSession.password = password
   accountSession.progress = 5
+  accountSession.totalActivityCount = 0
   accountSession.outdoorActivityCount = 0
   accountSession.activities = []
   accountSession.activityOptions = []
@@ -86,9 +119,13 @@ export function setAccountSessionLoadingActivities(progress: number) {
   touchSession()
 }
 
-export function completeAccountSession(activities: Activity[]) {
+export function completeAccountSession(
+  totalActivityCount: number,
+  activities: Activity[]
+) {
   accountSession.status = 'ready'
   accountSession.progress = 100
+  accountSession.totalActivityCount = totalActivityCount
   accountSession.activities = [...activities]
   accountSession.activityOptions = buildPosterActivityOptions(activities)
   accountSession.outdoorActivityCount = activities.length
@@ -99,6 +136,7 @@ export function completeAccountSession(activities: Activity[]) {
 export function failAccountSession(error: string) {
   accountSession.status = 'failed'
   accountSession.progress = 0
+  accountSession.totalActivityCount = 0
   accountSession.outdoorActivityCount = 0
   accountSession.activities = []
   accountSession.activityOptions = []
@@ -112,6 +150,7 @@ export function clearAccountSession() {
   accountSession.username = null
   accountSession.password = null
   accountSession.progress = 0
+  accountSession.totalActivityCount = 0
   accountSession.outdoorActivityCount = 0
   accountSession.activities = []
   accountSession.activityOptions = []

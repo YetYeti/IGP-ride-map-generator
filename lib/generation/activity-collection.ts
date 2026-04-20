@@ -1,8 +1,5 @@
 import { updateRequestedOutputsProgress } from '@/lib/generation/output-progress'
-import {
-  filterActivitiesByYear,
-  filterOutdoorActivities,
-} from '@/lib/generation/activity-filtering'
+import { filterActivitiesByYear } from '@/lib/generation/activity-filtering'
 import {
   appendTaskLog,
   setTaskFailed,
@@ -12,30 +9,31 @@ import {
 import type { GenerationTaskRequest } from '@/lib/generation/types'
 import type { Activity, IGPSPORTClient } from '@/lib/igpsport'
 
+interface SessionActivitySnapshot {
+  totalActivityCount: number
+  outdoorActivityCount: number
+  activities: Activity[]
+}
+
 export async function collectFilteredActivities(
   taskId: string,
   client: IGPSPORTClient,
   request: GenerationTaskRequest,
-  credentials: { username: string; password: string }
+  credentials: { username: string; password: string },
+  sessionActivitySnapshot: SessionActivitySnapshot
 ): Promise<Activity[] | null> {
-  appendTaskLog(taskId, '正在登录 IGPSPORT...', 'info')
-  await client.login(credentials.username, credentials.password)
-  appendTaskLog(taskId, '登录成功', 'success')
-  setTaskProgress(taskId, 10)
-  updateRequestedOutputsProgress(taskId, request, 12, 'pending')
+  appendTaskLog(taskId, '正在复用已获取的骑行活动数据...', 'info')
+  setTaskProgress(taskId, 15)
+  updateRequestedOutputsProgress(taskId, request, 18, 'pending')
 
-  const activities = await client.getAllActivities((page) => {
-    appendTaskLog(taskId, `正在获取第 ${page} 页活动...`, 'info')
-    setTaskProgress(taskId, Math.min(25, 10 + page * 2))
-    updateRequestedOutputsProgress(taskId, request, Math.min(24, 12 + page * 2), 'pending')
-  })
-
-  const outdoorActivities = filterOutdoorActivities(activities)
-  const filteredActivities = filterActivitiesByYear(outdoorActivities, request.filters.year)
+  const filteredActivities = filterActivitiesByYear(
+    sessionActivitySnapshot.activities,
+    request.filters.year
+  )
 
   updateTaskStats(taskId, {
-    totalActivities: activities.length,
-    outdoorActivities: outdoorActivities.length,
+    totalActivities: sessionActivitySnapshot.totalActivityCount,
+    outdoorActivities: sessionActivitySnapshot.outdoorActivityCount,
     filteredActivities: filteredActivities.length,
   })
 
@@ -49,6 +47,12 @@ export async function collectFilteredActivities(
 
   filteredActivities.sort((left, right) => left.RideId - right.RideId)
   appendTaskLog(taskId, `找到 ${filteredActivities.length} 个户外骑行`, 'info')
+  setTaskProgress(taskId, 25)
+  updateRequestedOutputsProgress(taskId, request, 25, 'pending')
+
+  appendTaskLog(taskId, '正在登录 IGPSPORT...', 'info')
+  await client.login(credentials.username, credentials.password)
+  appendTaskLog(taskId, '登录成功', 'success')
   setTaskProgress(taskId, 30)
   updateRequestedOutputsProgress(taskId, request, 30, 'pending')
 

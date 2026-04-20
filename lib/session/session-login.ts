@@ -41,7 +41,7 @@ async function runAccountLogin(loginRunId: number, username: string, password: s
     }
 
     const outdoorActivities = filterOutdoorActivities(activities)
-    completeAccountSession(outdoorActivities)
+    completeAccountSession(activities.length, outdoorActivities)
   } catch (error: unknown) {
     if (loginRunId !== currentLoginRunId) {
       return
