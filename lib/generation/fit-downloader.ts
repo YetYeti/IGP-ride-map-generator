@@ -1,7 +1,6 @@
-import { writeFileSync } from 'fs'
-import { getFitFilePath, hasUsableFitFile } from '@/lib/generation/artifact-service'
 import { updateRequestedOutputsProgress } from '@/lib/generation/output-progress'
 import { getErrorMessage } from '@/lib/error-utils'
+import { ensureActivitiesPrepared } from '@/lib/generation/ride-preparation'
 import {
   appendTaskLog,
   setTaskProgress,
@@ -29,29 +28,25 @@ export async function downloadFitFilesForActivities(
       'info'
     )
 
-    const batchResults = await Promise.all(
-      batch.map(async (activity) => {
-        try {
-          const fitFilePath = getFitFilePath(activity.RideId)
+    const preparedBatch = await ensureActivitiesPrepared(client, batch, {
+      onFitCacheHit: (rideId) => {
+        appendTaskLog(taskId, `活动 ${rideId} 已存在本地 FIT，跳过下载`, 'info')
+      },
+      onFitDownloaded: (rideId) => {
+        appendTaskLog(taskId, `活动 ${rideId} FIT 下载完成`, 'info')
+      },
+      onGpsCacheHit: (rideId) => {
+        appendTaskLog(taskId, `活动 ${rideId} 已存在 GPS 持久缓存，跳过解析`, 'info')
+      },
+      onGpsCachePrepared: (rideId) => {
+        appendTaskLog(taskId, `活动 ${rideId} GPS 持久缓存已准备完成`, 'info')
+      },
+      onPreparationFailed: (rideId, error) => {
+        appendTaskLog(taskId, `处理活动 ${rideId} 失败: ${getErrorMessage(error)}`, 'error')
+      },
+    })
 
-          if (hasUsableFitFile(activity.RideId)) {
-            appendTaskLog(taskId, `活动 ${activity.RideId} 已存在本地 FIT，跳过下载`, 'info')
-            return activity
-          }
-
-          const fitFile = await client.downloadFitFile(activity.RideId)
-          writeFileSync(fitFilePath, fitFile)
-          return activity
-        } catch (error: unknown) {
-          appendTaskLog(taskId, `处理活动 ${activity.RideId} 失败: ${getErrorMessage(error)}`, 'error')
-          return null
-        }
-      })
-    )
-
-    processedActivities.push(
-      ...batchResults.filter((activity): activity is Activity => activity !== null)
-    )
+    processedActivities.push(...preparedBatch)
 
     const progress = 30 + (processedActivities.length / activities.length) * 35
     setTaskProgress(taskId, progress)
