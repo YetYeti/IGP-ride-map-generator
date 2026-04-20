@@ -1,10 +1,12 @@
 'use client'
 
 import React from 'react'
+import { AccountSessionCard } from '@/components/AccountSessionCard'
 import { EmptyResultState } from '@/components/EmptyResultState'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { RideForm } from '@/components/RideForm'
 import { ResultPreview } from '@/components/ResultPreview'
+import { useAccountSession } from '@/hooks/useAccountSession'
 import { useGenerationTask } from '@/hooks/useGenerationTask'
 import {
   getLatestTaskMessage,
@@ -14,6 +16,7 @@ import {
 import type { GenerationTaskRequest } from '@/lib/generation/types'
 
 export default function Home() {
+  const { session, error: sessionError, login, logout } = useAccountSession()
   const { task, error, loading, submitTask } = useGenerationTask()
 
   const handleSubmit = async (data: GenerationTaskRequest) => {
@@ -38,16 +41,28 @@ export default function Home() {
         </header>
 
         <section className="grid grid-cols-1 gap-8 xl:grid-cols-[380px_minmax(0,1fr)]">
-          <aside className="xl:sticky xl:top-6 xl:self-start">
+          <aside className="space-y-6 xl:sticky xl:top-6 xl:self-start">
+            <AccountSessionCard
+              session={session}
+              error={sessionError}
+              onLogin={login}
+              onLogout={logout}
+            />
+
             <Card className="overflow-hidden">
               <CardHeader className="border-b border-gray-200">
                 <CardTitle>生成设置</CardTitle>
                 <p className="text-sm text-gray-600">
-                  填写账号信息并选择输出参数。
+                  选择年份和输出参数。
                 </p>
               </CardHeader>
               <CardContent className="pt-6">
-                <RideForm onSubmit={handleSubmit} loading={loading} />
+                <RideForm
+                  onSubmit={handleSubmit}
+                  loading={loading}
+                  accountReady={session.status === 'ready'}
+                  posterActivityOptions={session.activities}
+                />
               </CardContent>
             </Card>
           </aside>

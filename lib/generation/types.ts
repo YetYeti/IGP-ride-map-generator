@@ -61,12 +61,35 @@ export interface PosterActivityOption {
   rideId: number
   label: string
   startTime: string
+  startedAt: string
+  year: number
   durationText: string
   distanceText: string
 }
 
 export interface PosterActivityOptionsResponse {
   activities: PosterActivityOption[]
+}
+
+export type AccountSessionStatus =
+  | 'logged_out'
+  | 'logging_in'
+  | 'loading_activities'
+  | 'ready'
+  | 'failed'
+
+export interface AccountSessionSummary {
+  status: AccountSessionStatus
+  username: string | null
+  progress: number
+  outdoorActivityCount: number
+  activities: PosterActivityOption[]
+  error: string | null
+  updatedAt: string | null
+}
+
+export interface AccountSessionResponse {
+  session: AccountSessionSummary
 }
 
 export interface GenerationTaskRequest {

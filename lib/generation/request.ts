@@ -28,20 +28,8 @@ export function parseGenerationTaskRequest(body: unknown): {
   }
 
   const credentialsValue = body.credentials
-  if (!isRecord(credentialsValue)) {
-    return { error: '缺少 credentials 配置' }
-  }
-
-  const username = credentialsValue.username
-  const password = credentialsValue.password
-
-  if (typeof username !== 'string' || username.trim() === '') {
-    return { error: 'IGPSPORT账号必须填写' }
-  }
-
-  if (typeof password !== 'string' || password.trim() === '') {
-    return { error: 'IGPSPORT密码必须填写' }
-  }
+  const username = isRecord(credentialsValue) ? credentialsValue.username : undefined
+  const password = isRecord(credentialsValue) ? credentialsValue.password : undefined
 
   const initialRequest = createInitialTaskRequest()
 
@@ -87,9 +75,11 @@ export function parseGenerationTaskRequest(body: unknown): {
     initialRequest.outputs.poster = poster
   }
 
-  initialRequest.credentials = {
-    username: username.trim(),
-    password,
+  if (typeof username === 'string' && username.trim() !== '' && typeof password === 'string') {
+    initialRequest.credentials = {
+      username: username.trim(),
+      password,
+    }
   }
 
   return { request: initialRequest }

@@ -12,6 +12,8 @@ export function buildPosterActivityOptions(activities: Activity[]): PosterActivi
       return {
         rideId: activity.RideId,
         startTime,
+        startedAt: activity.start_time.toISOString(),
+        year: activity.start_time.getFullYear(),
         durationText,
         distanceText,
         label: `${startTime} ${durationText} ${distanceText}`,

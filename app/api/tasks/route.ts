@@ -7,6 +7,7 @@ import {
 } from '@/lib/generation/task-route'
 import { startTaskRun } from '@/lib/generation/task-runner'
 import { createTask, getRunningTaskCount } from '@/lib/generation/task-store'
+import { getAccountSessionCredentials } from '@/lib/session/session-store'
 
 const MAX_CONCURRENT_TASKS = 3
 
@@ -26,8 +27,16 @@ export async function POST(req: NextRequest) {
       return badTaskRequestResponse(error)
     }
 
+    const credentials = getAccountSessionCredentials()
+    if (!credentials) {
+      return NextResponse.json(
+        { error: '请先登录账号并完成活动获取' },
+        { status: 401 }
+      )
+    }
+
     const task = createTask()
-    startTaskRun(task.id, request)
+    startTaskRun(task.id, request, credentials)
 
     return acceptedTaskResponse(task)
   } catch (error: unknown) {

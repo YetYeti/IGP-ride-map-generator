@@ -15,10 +15,11 @@ import type { Activity, IGPSPORTClient } from '@/lib/igpsport'
 export async function collectFilteredActivities(
   taskId: string,
   client: IGPSPORTClient,
-  request: GenerationTaskRequest
+  request: GenerationTaskRequest,
+  credentials: { username: string; password: string }
 ): Promise<Activity[] | null> {
   appendTaskLog(taskId, '正在登录 IGPSPORT...', 'info')
-  await client.login(request.credentials.username, request.credentials.password)
+  await client.login(credentials.username, credentials.password)
   appendTaskLog(taskId, '登录成功', 'success')
   setTaskProgress(taskId, 10)
   updateRequestedOutputsProgress(taskId, request, 12, 'pending')
