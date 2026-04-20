@@ -14,7 +14,6 @@ import {
   togglePoster,
   updateCombinedMapSetting,
   updateOverlayMapStyle,
-  updatePosterActivityMode,
   updatePosterAspectRatio,
   updatePosterSelectedRideId,
 } from '@/lib/generation/track-settings'
@@ -97,11 +96,16 @@ export function TrackSettings({
             activityOptions={posterActivityOptions}
             activityOptionsLoading={posterActivityOptionsLoading}
             activityOptionsError={posterActivityOptionsError}
-            onActivityModeChange={(activityMode) =>
-              onPosterChange(updatePosterActivityMode(poster, activityMode))
-            }
-            onSelectedRideIdChange={(rideId) =>
-              onPosterChange(updatePosterSelectedRideId(poster, rideId))
+            onSelectionChange={(rideId) =>
+              onPosterChange(
+                updatePosterSelectedRideId(
+                  {
+                    ...poster,
+                    activityMode: rideId === null ? 'all' : 'single',
+                  },
+                  rideId
+                )
+              )
             }
           />
         </>

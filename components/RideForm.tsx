@@ -71,12 +71,7 @@ export function RideForm({
     e.preventDefault()
 
     const nextErrors = {
-      posterActivity:
-        formData.outputs.poster.enabled &&
-        formData.outputs.poster.activityMode === 'single' &&
-        formData.outputs.poster.selectedRideId === null
-          ? '请选择一个活动'
-          : '',
+      posterActivity: '',
     }
 
     setFieldErrors(nextErrors)
