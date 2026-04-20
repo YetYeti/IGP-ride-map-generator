@@ -40,9 +40,7 @@ export function AccountSessionCard({
     },
   })
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-
+  const handleLogin = async () => {
     const username = usernameInputRef.current?.value ?? credentials.username
     const password = passwordInputRef.current?.value ?? credentials.password
     const nextErrors = {
@@ -63,6 +61,15 @@ export function AccountSessionCard({
     } finally {
       setSubmitting(false)
     }
+  }
+
+  const handleCredentialKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== 'Enter' || isBusy) {
+      return
+    }
+
+    event.preventDefault()
+    void handleLogin()
   }
 
   const isBusy =
@@ -98,7 +105,7 @@ export function AccountSessionCard({
             </Button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-4">
             {isBusy || session.status === 'failed' ? (
               <>
                 <div className="space-y-2 rounded-lg border border-gray-200 bg-gray-50 p-4">
@@ -158,6 +165,7 @@ export function AccountSessionCard({
                     setFieldErrors((prev) => ({ ...prev, username: '' }))
                     setCredentials((prev) => ({ ...prev, username }))
                   }}
+                  onKeyDown={handleCredentialKeyDown}
                   onFocus={() => setFieldErrors((prev) => ({ ...prev, username: '' }))}
                   disabled={isBusy}
                 />
@@ -180,18 +188,24 @@ export function AccountSessionCard({
                     setFieldErrors((prev) => ({ ...prev, password: '' }))
                     setCredentials((prev) => ({ ...prev, password }))
                   }}
+                  onKeyDown={handleCredentialKeyDown}
                   onFocus={() => setFieldErrors((prev) => ({ ...prev, password: '' }))}
                   disabled={isBusy}
                 />
 
                 {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
-                <Button type="submit" className="w-full" disabled={isBusy}>
+                <Button
+                  type="button"
+                  className="w-full"
+                  disabled={isBusy}
+                  onClick={() => void handleLogin()}
+                >
                   登录
                 </Button>
               </>
             )}
-          </form>
+          </div>
         )}
       </CardContent>
     </Card>
