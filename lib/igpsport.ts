@@ -13,6 +13,8 @@ import {
 export type { Activity } from '@/lib/igpsport-types'
 import type { Activity } from '@/lib/igpsport-types'
 
+const ACTIVITIES_PAGE_SIZE = 100
+
 export class IGPSPORTClient {
   private cookieJar: Map<string, string> = new Map()
 
@@ -72,7 +74,7 @@ export class IGPSPORTClient {
 
   async getActivities(
     pageIndex: number = 1,
-    pageSize: number = 20
+    pageSize: number = ACTIVITIES_PAGE_SIZE
   ): Promise<Activity[]> {
     this.ensureLoggedIn()
 
@@ -135,7 +137,7 @@ export class IGPSPORTClient {
   async getAllActivities(onProgress?: (page: number, total: number) => void): Promise<Activity[]> {
     const allActivities: Activity[] = []
     let pageIndex = 1
-    const pageSize = 20
+    const pageSize = ACTIVITIES_PAGE_SIZE
 
     while (true) {
       console.log(`=== Fetching page ${pageIndex} ===`)
