@@ -3,11 +3,10 @@
 import React from 'react'
 import { getErrorMessage } from '@/lib/error-utils'
 import type {
-  AccountSessionResponse,
+  AccountLoginResponse,
   AccountSessionSummary,
+  ActivitySnapshot,
 } from '@/lib/generation/types'
-
-const POLL_INTERVAL_MS = 1500
 
 const EMPTY_SESSION: AccountSessionSummary = {
   status: 'logged_out',
@@ -22,67 +21,19 @@ const EMPTY_SESSION: AccountSessionSummary = {
 export function useAccountSession() {
   const [session, setSession] = React.useState<AccountSessionSummary>(EMPTY_SESSION)
   const [error, setError] = React.useState<string | null>(null)
-  const pollTimeoutRef = React.useRef<number | null>(null)
+  const credentialsRef = React.useRef<{ username: string; password: string } | null>(null)
+  const activitySnapshotRef = React.useRef<ActivitySnapshot | null>(null)
 
-  const clearPollTimeout = React.useCallback(() => {
-    if (pollTimeoutRef.current !== null) {
-      window.clearTimeout(pollTimeoutRef.current)
-      pollTimeoutRef.current = null
-    }
-  }, [])
-
-  const fetchSession = React.useCallback(async () => {
-    const response = await fetch('/api/session', {
-      cache: 'no-store',
+  const login = React.useCallback(async (username: string, password: string) => {
+    setError(null)
+    setSession({
+      ...EMPTY_SESSION,
+      status: 'logging_in',
+      username,
+      progress: 10,
     })
 
-    const data = (await response.json()) as AccountSessionResponse & { error?: string }
-
-    if (!response.ok || !data.session) {
-      throw new Error(data.error ?? '获取账号会话失败')
-    }
-
-    setSession(data.session)
-    return data.session
-  }, [])
-
-  React.useEffect(() => {
-    let cancelled = false
-
-    const poll = async () => {
-      try {
-        const nextSession = await fetchSession()
-
-        if (cancelled) {
-          return
-        }
-
-        if (
-          nextSession.status === 'logging_in' ||
-          nextSession.status === 'loading_activities'
-        ) {
-          pollTimeoutRef.current = window.setTimeout(poll, POLL_INTERVAL_MS)
-        }
-      } catch (sessionError: unknown) {
-        if (!cancelled) {
-          setError(getErrorMessage(sessionError))
-        }
-      }
-    }
-
-    void poll()
-
-    return () => {
-      cancelled = true
-      clearPollTimeout()
-    }
-  }, [clearPollTimeout, fetchSession])
-
-  const login = React.useCallback(
-    async (username: string, password: string) => {
-      clearPollTimeout()
-      setError(null)
-
+    try {
       const response = await fetch('/api/session/login', {
         method: 'POST',
         headers: {
@@ -94,53 +45,41 @@ export function useAccountSession() {
         }),
       })
 
-      const data = (await response.json()) as AccountSessionResponse & { error?: string }
+      const data = (await response.json()) as AccountLoginResponse & { error?: string }
 
-      if (!response.ok || !data.session) {
+      if (!response.ok || !data.session || !data.activitySnapshot) {
         throw new Error(data.error ?? '账号登录失败')
       }
 
+      credentialsRef.current = { username, password }
+      activitySnapshotRef.current = data.activitySnapshot
       setSession(data.session)
-
-      pollTimeoutRef.current = window.setTimeout(async function poll() {
-        try {
-          const nextSession = await fetchSession()
-
-          if (
-            nextSession.status === 'logging_in' ||
-            nextSession.status === 'loading_activities'
-          ) {
-            pollTimeoutRef.current = window.setTimeout(poll, POLL_INTERVAL_MS)
-          }
-        } catch (sessionError: unknown) {
-          setError(getErrorMessage(sessionError))
-        }
-      }, POLL_INTERVAL_MS)
-    },
-    [clearPollTimeout, fetchSession]
-  )
+    } catch (loginError: unknown) {
+      credentialsRef.current = null
+      activitySnapshotRef.current = null
+      setSession({
+        ...EMPTY_SESSION,
+        status: 'failed',
+        username,
+        error: getErrorMessage(loginError),
+      })
+      setError(getErrorMessage(loginError))
+    }
+  }, [])
 
   const logout = React.useCallback(async () => {
-    clearPollTimeout()
+    credentialsRef.current = null
+    activitySnapshotRef.current = null
     setError(null)
-
-    const response = await fetch('/api/session', {
-      method: 'DELETE',
-    })
-
-    const data = (await response.json()) as AccountSessionResponse & { error?: string }
-
-    if (!response.ok || !data.session) {
-      throw new Error(data.error ?? '退出登录失败')
-    }
-
-    setSession(data.session)
-  }, [clearPollTimeout])
+    setSession(EMPTY_SESSION)
+  }, [])
 
   return {
     session,
     error,
     login,
     logout,
+    credentials: credentialsRef.current,
+    activitySnapshot: activitySnapshotRef.current,
   }
 }

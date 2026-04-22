@@ -16,11 +16,15 @@ import {
 import type { GenerationTaskRequest } from '@/lib/generation/types'
 
 export default function Home() {
-  const { session, error: sessionError, login, logout } = useAccountSession()
+  const { session, error: sessionError, login, logout, credentials, activitySnapshot } = useAccountSession()
   const { task, error, loading, submitTask } = useGenerationTask()
 
   const handleSubmit = async (data: GenerationTaskRequest) => {
-    await submitTask(data)
+    if (!credentials || !activitySnapshot) {
+      return
+    }
+
+    await submitTask(data, credentials, activitySnapshot)
   }
 
   const logs = React.useMemo(() => getVisibleTaskLogs(task, error), [task, error])

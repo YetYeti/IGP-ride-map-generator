@@ -1,20 +1,21 @@
 import { getErrorMessage } from '@/lib/error-utils'
 import { ensureActivitiesPrepared } from '@/lib/generation/ride-preparation'
 import { IGPSPORTClient, type Activity } from '@/lib/igpsport'
-import {
-  beginWarmupRun,
-  isWarmupRunCurrent,
-} from '@/lib/session/session-store'
 
 const WARMUP_BATCH_SIZE = 3
+let currentWarmupRunId = 0
 
-export function startSessionWarmup() {
-  const snapshot = beginWarmupRun()
-  if (!snapshot.credentials || snapshot.activities.length === 0) {
+export function startSessionWarmup(
+  credentials: { username: string; password: string },
+  activities: Activity[]
+) {
+  if (activities.length === 0) {
     return
   }
 
-  void runSessionWarmup(snapshot.runId, snapshot.credentials, snapshot.activities).catch(
+  const runId = ++currentWarmupRunId
+
+  void runSessionWarmup(runId, credentials, activities).catch(
     (error: unknown) => {
       console.error('后台预热失败:', getErrorMessage(error))
     }
@@ -30,7 +31,7 @@ async function runSessionWarmup(
   await client.login(credentials.username, credentials.password)
 
   for (let batchStart = 0; batchStart < activities.length; batchStart += WARMUP_BATCH_SIZE) {
-    if (!isWarmupRunCurrent(runId)) {
+    if (runId !== currentWarmupRunId) {
       return
     }
 
@@ -38,7 +39,7 @@ async function runSessionWarmup(
 
     await Promise.all(
       batch.map(async (activity) => {
-        if (!isWarmupRunCurrent(runId)) {
+        if (runId !== currentWarmupRunId) {
           return
         }
 

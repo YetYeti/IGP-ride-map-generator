@@ -88,6 +88,45 @@ export interface AccountSessionResponse {
   session: AccountSessionSummary
 }
 
+export interface ActivitySnapshotItem {
+  RideId: number
+  MemberId: number
+  Title: string
+  sport: string
+  sub_sport: string
+  start_time: string
+  total_ascent: number
+  total_descent: number
+  total_calories: number
+  total_distance: number
+  total_elapsed_time: number
+  total_moving_time: number
+  avg_cadence: number
+  max_cadence: number
+  avg_heart_rate: number
+  min_heart_rate: number
+  max_heart_rate: number
+  avg_power: number
+  max_power: number
+  avg_speed: number
+  max_speed: number
+  avg_temperature: number
+  max_temperature: number
+  intensity_factor: number
+  normalized_power: number
+  training_stress_score: number
+}
+
+export interface ActivitySnapshot {
+  totalActivityCount: number
+  outdoorActivityCount: number
+  activities: ActivitySnapshotItem[]
+}
+
+export interface AccountLoginResponse extends AccountSessionResponse {
+  activitySnapshot: ActivitySnapshot
+}
+
 export interface GenerationTaskRequest {
   filters: {
     year: number | 'all'
@@ -97,6 +136,15 @@ export interface GenerationTaskRequest {
     overlayMap: OverlayMapOutputConfig
     poster: PosterOutputConfig
   }
+}
+
+export interface CreateGenerationTaskPayload {
+  request: GenerationTaskRequest
+  credentials: {
+    username: string
+    password: string
+  }
+  activitySnapshot: ActivitySnapshot
 }
 
 export type GenerationArtifactKind = 'combined-map' | 'overlay-map' | 'poster'

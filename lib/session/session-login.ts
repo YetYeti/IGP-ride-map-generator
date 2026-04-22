@@ -43,7 +43,7 @@ async function runAccountLogin(loginRunId: number, username: string, password: s
 
     const outdoorActivities = filterOutdoorActivities(activities)
     completeAccountSession(activities.length, outdoorActivities)
-    startSessionWarmup()
+    startSessionWarmup({ username, password }, outdoorActivities)
   } catch (error: unknown) {
     if (loginRunId !== currentLoginRunId) {
       return

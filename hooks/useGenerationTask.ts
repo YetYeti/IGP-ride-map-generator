@@ -9,7 +9,11 @@ import {
   markTaskAsExpired,
   TASK_EXPIRED_ERROR,
 } from '@/lib/generation/task-status'
-import type { GenerationTask, GenerationTaskRequest } from '@/lib/generation/types'
+import type {
+  ActivitySnapshot,
+  GenerationTask,
+  GenerationTaskRequest,
+} from '@/lib/generation/types'
 
 const POLL_INTERVAL_MS = 2000
 const MAX_POLL_INTERVAL_MS = 30000
@@ -91,7 +95,11 @@ export function useGenerationTask() {
     }
   }, [clearPollTimeout, schedulePoll, task?.id, task?.status, startTransition])
 
-  const submitTask = async (request: GenerationTaskRequest) => {
+  const submitTask = async (
+    request: GenerationTaskRequest,
+    credentials: { username: string; password: string },
+    activitySnapshot: ActivitySnapshot
+  ) => {
     clearPollTimeout()
     consecutiveErrorsRef.current = 0
 
@@ -103,7 +111,7 @@ export function useGenerationTask() {
     })
 
     try {
-      const task = await createGenerationTask(request)
+      const task = await createGenerationTask(request, credentials, activitySnapshot)
 
       startTransition(() => {
         setTask(task)

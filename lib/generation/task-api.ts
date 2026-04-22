@@ -1,16 +1,28 @@
 import type {
+  ActivitySnapshot,
   CreateGenerationTaskResponse,
+  CreateGenerationTaskPayload,
   GenerationTask,
   GenerationTaskRequest,
 } from '@/lib/generation/types'
 
-export async function createGenerationTask(request: GenerationTaskRequest): Promise<GenerationTask> {
+export async function createGenerationTask(
+  request: GenerationTaskRequest,
+  credentials: { username: string; password: string },
+  activitySnapshot: ActivitySnapshot
+): Promise<GenerationTask> {
+  const payload: CreateGenerationTaskPayload = {
+    request,
+    credentials,
+    activitySnapshot,
+  }
+
   const response = await fetch('/api/tasks', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(request),
+    body: JSON.stringify(payload),
   })
 
   const data = (await response.json()) as CreateGenerationTaskResponse & { error?: string }
