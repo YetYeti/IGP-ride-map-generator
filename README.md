@@ -1,18 +1,20 @@
 # IGPSPORT 骑行轨迹生成器
 
-从 IGPSPORT 获取骑行数据并生成轨迹合成图和叠加地图。
+从 IGPSPORT 获取骑行数据并生成轨迹合成图、叠加地图和轨迹海报。
 
 ## 功能特点
 
-- 支持登录 IGPSPORT 账号
-- 自动获取所有户外骑行数据
+- 支持登录 IGPSPORT 账号并获取户外骑行活动
 - 生成轨迹合成图（PNG）
 - 生成轨迹叠加网页（HTML，支持多种地图样式）
+- 生成轨迹海报（PNG）
 - 现代化响应式设计
 - 实时日志显示
 - 生成结果预览和下载
 - 生成产物30分钟自动过期
 - FIT 文件本地保留并自动复用
+- 单 FIT 的 GPS 解析结果持久缓存到 `cache/gps/`
+- 登录后静默预热 FIT 与 GPS 缓存
 
 ## 技术栈
 
@@ -38,6 +40,12 @@ npm run dev
 ```
 
 访问 http://localhost:3000
+
+注意：
+
+- 账号密码只保存在当前页面内存中
+- 刷新页面后需要重新登录
+- 已下载的 FIT 文件和 `cache/gps` 持久缓存不会因刷新丢失
 
 ## 服务器部署（CentOS 7）
 
@@ -284,31 +292,39 @@ IGPSPORT_RIDE_MAP_VERCEL/
 │   ├── layout.tsx                  # 全局布局
 │   ├── globals.css                 # 全局样式
 │   └── api/
+│       ├── session/login/route.ts  # 登录并获取户外骑行活动
 │       ├── tasks/route.ts          # 创建生成任务
 │       ├── tasks/[taskId]/route.ts # 查询任务状态
 │       ├── tasks/[taskId]/artifacts/[filename]/route.ts # 下载或预览产物
 │       └── health/route.ts         # 健康检查
 ├── components/
 │   ├── ui/                        # 基础 UI 组件
+│   ├── AccountSessionCard.tsx     # 账号登录卡片
 │   ├── RideForm.tsx               # 骑行数据表单
 │   ├── TrackSettings.tsx          # 轨迹设置
-│   ├── LogDisplay.tsx             # 日志显示
 │   └── ResultPreview.tsx          # 结果预览
 ├── hooks/
+│   ├── useAccountSession.ts       # 页面内登录状态
 │   └── useGenerationTask.ts       # 任务创建与轮询
 ├── lib/
 │   ├── igpsport.ts                # IGPSPORT API 客户端
 │   ├── generation/                # 任务模型与服务层
+│   │   ├── activity-snapshot.ts   # 活动快照序列化/反序列化
+│   │   └── ride-preparation.ts    # FIT/GPS 统一准备流水线
 │   ├── map-styles.ts              # 地图样式配置
+│   ├── session/
+│   │   └── session-warmup.ts      # 登录后静默预热
 │   └── python/                    # Python 脚本
 │       ├── generate_combined_map.py    # 生成轨迹合成图
-│       └── generate_multiple_overlays.py # 生成轨迹叠加网页
+│       ├── generate_multiple_overlays.py # 生成轨迹叠加网页
+│       └── generate_track_art_poster.py # 生成轨迹海报
 ├── deployments/                    # 部署配置文件
 │   ├── igpsport.service           # systemd 服务配置
 │   └── nginx.conf                # Nginx 配置
+├── cache/
+│   ├── gps/                       # 按 rideId 持久缓存 GPS 解析结果
+│   └── poster_osm/                # 海报 OSM 分块缓存
 ├── public/
-│   ├── fit_files/                 # 本地 FIT 缓存目录
-│   ├── outputs/                   # 生成产物目录（30分钟过期）
 │   └── .gitkeep
 ├── package.json
 ├── tsconfig.json
@@ -319,19 +335,26 @@ IGPSPORT_RIDE_MAP_VERCEL/
 
 ## 使用说明
 
-1. 输入 IGPSPORT 账号和密码
-2. 选择生成选项：
+1. 输入 IGPSPORT 账号和密码并登录
+2. 等待获取户外骑行活动
+3. 选择生成选项：
    - 轨迹合成图：将所有轨迹合并为一张大图
    - 轨迹叠加网页：在交互式地图上叠加所有轨迹
-3. 选择地图样式（可选）：
+   - 轨迹海报：生成艺术风格轨迹海报
+4. 选择地图样式或海报参数（可选）：
    - 默认样式
    - 浅色地图（含标签）
    - 浅色地图（无标签）
    - 深色地图（含标签）
    - 深色地图（无标签）
-4. 点击"生成轨迹"按钮
-5. 等待处理完成，实时查看日志
-6. 预览生成结果并下载
+5. 点击"生成轨迹"按钮
+6. 等待处理完成，实时查看日志
+7. 预览生成结果并下载
+
+说明：
+
+- 页面刷新后需要重新登录并重新获取活动元数据
+- 但服务器上已存在的 FIT 与 GPS 缓存仍会继续复用
 
 ## 环境变量
 
@@ -348,7 +371,9 @@ TEMP_DIR=/var/lib/igpsport/temp
 - **显式配置 `TEMP_DIR`**：FIT、PNG、HTML 都存到 `TEMP_DIR`
 - **未配置 `TEMP_DIR`**：FIT 默认存到 `public/fit_files`，PNG 和 HTML 默认存到 `public/outputs`
 - **30分钟过期**：PNG 和 HTML 文件30分钟后自动删除
-- **本地复用**：已有同名 FIT 文件时会跳过重新下载
+- **FIT 复用**：已有同名 FIT 文件时会跳过重新下载
+- **GPS 持久缓存**：按 `rideId` 保存到 `cache/gps/`
+- **静默预热**：登录成功后后台会尽量补齐 FIT 与 GPS 缓存
 - **自动清理**：每次生成前自动清理过期文件
 
 ## 地图样式
