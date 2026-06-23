@@ -8,26 +8,33 @@ interface ActivityPayload extends Record<string, unknown> {
   RecordTime?: unknown
 }
 
-const DATE_FIELDS = ['StartTime', 'start_time', 'BeginTime', 'beginTime', 'Date', 'date']
+const DATE_FIELDS = ['StartTime', 'startTime', 'start_time', 'BeginTime', 'beginTime', 'Date', 'date']
 
 export function extractActivityItems(result: unknown): ActivityPayload[] {
   if (!isRecord(result)) {
     return []
   }
 
-  const items = result.item
-  if (!Array.isArray(items)) {
+  // 新接口 /activity/queryMyActivity：数据在 data.rows 中，且字段为 camelCase（如 rideId）。
+  // 这里同时兼容旧接口（item 数组）与新旧字段命名。
+  const data = result.data
+  const rows = isRecord(data) ? data.rows : result.item
+
+  if (!Array.isArray(rows)) {
     return []
   }
 
-  return items.filter(isRecord)
+  return rows.filter(isRecord)
 }
 
 export function mapActivityItem(data: ActivityPayload): Activity {
+  const rideId = readNumberField(data, ['RideId', 'rideId'])
+  const memberId = readNumberField(data, ['MemberId', 'memberId'])
+
   return {
-    RideId: typeof data.RideId === 'number' ? data.RideId : 0,
-    MemberId: typeof data.MemberId === 'number' ? data.MemberId : 0,
-    Title: typeof data.Title === 'string' ? data.Title : '',
+    RideId: rideId,
+    MemberId: memberId,
+    Title: readStringField(data, ['Title', 'title']),
     sport: 'None',
     sub_sport: 'None',
     start_time: parseActivityDate(data),
@@ -54,6 +61,35 @@ export function mapActivityItem(data: ActivityPayload): Activity {
   }
 }
 
+function readNumberField(data: Record<string, unknown>, fields: string[]): number {
+  for (const field of fields) {
+    const value = data[field]
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value
+    }
+
+    if (typeof value === 'string') {
+      const parsed = Number.parseFloat(value)
+      if (Number.isFinite(parsed)) {
+        return parsed
+      }
+    }
+  }
+
+  return 0
+}
+
+function readStringField(data: Record<string, unknown>, fields: string[]): string {
+  for (const field of fields) {
+    const value = data[field]
+    if (typeof value === 'string' && value.trim() !== '') {
+      return value
+    }
+  }
+
+  return ''
+}
+
 function parseActivityDate(data: Record<string, unknown>): Date {
   for (const field of DATE_FIELDS) {
     const value = data[field]
@@ -66,24 +102,17 @@ function parseActivityDate(data: Record<string, unknown>): Date {
 }
 
 function parseActivityDistance(data: Record<string, unknown>): number {
-  const value = data.RideDistance
-  if (typeof value === 'number' && Number.isFinite(value)) {
+  const value = readNumberFieldRaw(data, ['RideDistance', 'rideDistance'])
+  if (Number.isFinite(value)) {
     return value * 1000
-  }
-
-  if (typeof value === 'string') {
-    const parsed = Number.parseFloat(value)
-    if (Number.isFinite(parsed)) {
-      return parsed * 1000
-    }
   }
 
   return 0
 }
 
 function parseActivityDuration(data: Record<string, unknown>): number {
-  const value = data.RecordTime
-  if (typeof value !== 'string' || value.trim() === '') {
+  const value = readStringFieldRaw(data, ['RecordTime', 'recordTime'])
+  if (value.trim() === '') {
     return 0
   }
 
@@ -92,6 +121,35 @@ function parseActivityDuration(data: Record<string, unknown>): number {
   const seconds = extractDurationPart(value, /(\d+)\s*秒/)
 
   return hours * 3600 + minutes * 60 + seconds
+}
+
+function readNumberFieldRaw(data: Record<string, unknown>, fields: string[]): number {
+  for (const field of fields) {
+    const value = data[field]
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value
+    }
+
+    if (typeof value === 'string') {
+      const parsed = Number.parseFloat(value)
+      if (Number.isFinite(parsed)) {
+        return parsed
+      }
+    }
+  }
+
+  return Number.NaN
+}
+
+function readStringFieldRaw(data: Record<string, unknown>, fields: string[]): string {
+  for (const field of fields) {
+    const value = data[field]
+    if (typeof value === 'string') {
+      return value
+    }
+  }
+
+  return ''
 }
 
 function extractDurationPart(value: string, pattern: RegExp): number {

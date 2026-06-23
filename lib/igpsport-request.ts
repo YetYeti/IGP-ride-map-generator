@@ -1,18 +1,22 @@
 import {
   buildIGPSPORTDownloadHeaders,
   buildIGPSPORTHeaders,
+  IGPSPORT_BASE_URL_EXPORTED,
+  type IGPSPORTAuthState,
 } from '@/lib/igpsport-auth'
 
 const REQUEST_TIMEOUT_MS = 30_000
 
 export async function fetchIGPSPORTActivitiesPage(
-  cookieJar: Map<string, string>,
+  auth: IGPSPORTAuthState | null,
   pageIndex: number,
   pageSize: number
 ) {
-  const url = new URL('https://my.igpsport.com/Activity/ActivityList')
-  url.searchParams.append('pageIndex', pageIndex.toString())
+  const url = new URL(`${IGPSPORT_BASE_URL_EXPORTED}/web-gateway/web-analyze/activity/queryMyActivity`)
+  url.searchParams.append('pageNo', pageIndex.toString())
   url.searchParams.append('pageSize', pageSize.toString())
+  url.searchParams.append('reqType', '0')
+  url.searchParams.append('sort', '1')
 
   console.log('=== Fetching Activities ===')
   console.log('Page:', pageIndex, 'PageSize:', pageSize)
@@ -20,7 +24,7 @@ export async function fetchIGPSPORTActivitiesPage(
 
   const response = await fetch(url.toString(), {
     method: 'GET',
-    headers: buildIGPSPORTHeaders(cookieJar),
+    headers: buildIGPSPORTHeaders(auth),
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   })
 
@@ -38,15 +42,15 @@ export async function fetchIGPSPORTActivitiesPage(
 }
 
 export async function fetchIGPSPORTFitDownloadUrl(
-  cookieJar: Map<string, string>,
+  auth: IGPSPORTAuthState | null,
   rideId: number
 ) {
   const fitJsonUrl =
-    `https://prod.zh.igpsport.com/service/web-gateway/web-analyze/activity/getDownloadUrl/${rideId}`
+    `${IGPSPORT_BASE_URL_EXPORTED}/web-gateway/web-analyze/activity/getDownloadUrl/${rideId}`
 
   const response = await fetch(fitJsonUrl, {
     method: 'GET',
-    headers: buildIGPSPORTHeaders(cookieJar),
+    headers: buildIGPSPORTHeaders(auth),
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   })
 
